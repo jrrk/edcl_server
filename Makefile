@@ -11,6 +11,12 @@ libedcl.a: libedcl.o
 	rm -f $@
 	ar rc $@ libedcl.o
 
+libclient.o: client.o
+	ld -r -o libclient.o client.o
+
+libclient.a: libclient.o
+	rm -f $@
+	ar rc $@ libclient.o
 
 clean:
 	rm -f tester $O

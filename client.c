@@ -1,19 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stddef.h>
 #include <string.h>
-       #include <sys/types.h>
-       #include <sys/socket.h>
-       #include <netdb.h>
-       #include <stdio.h>
-       #include <stdlib.h>
-       #include <unistd.h>
-       #include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include "main.h"
 
-       #define BUF_SIZE 500
+#define BUF_SIZE 500
 
-       int
-       main(int argc, char *argv[])
+int client_main(char *host, char *port)
        {
            struct addrinfo hints;
            struct addrinfo *result, *rp;
@@ -21,11 +22,6 @@
            size_t len;
            ssize_t nread;
            char buf[BUF_SIZE];
-
-           if (argc < 3) {
-               fprintf(stderr, "Usage: %s host port msg...\n", argv[0]);
-               exit(EXIT_FAILURE);
-           }
 
            /* Obtain address(es) matching host/port */
 
@@ -35,7 +31,7 @@
            hints.ai_flags = 0;
            hints.ai_protocol = 0;          /* Any protocol */
 
-           s = getaddrinfo(argv[1], argv[2], &hints, &result);
+           s = getaddrinfo(host, port, &hints, &result);
            if (s != 0) {
                fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
                exit(EXIT_FAILURE);
@@ -63,33 +59,46 @@
            }
 
            freeaddrinfo(result);           /* No longer needed */
-
-           /* Send remaining command-line arguments as separate
-              datagrams, and read responses from server */
-
-           for (j = 3; j < argc; j++) {
-               len = strlen(argv[j]) + 1;
-                       /* +1 for terminating null byte */
-
-               if (len + 1 > BUF_SIZE) {
-                   fprintf(stderr,
-                           "Ignoring long message in argument %d\n", j);
-                   continue;
-               }
-
-               if (write(sfd, argv[j], len) != len) {
-                   fprintf(stderr, "partial/failed write\n");
-                   exit(EXIT_FAILURE);
-               }
-
-               nread = read(sfd, buf, BUF_SIZE);
-               if (nread == -1) {
-                   perror("read");
-                   exit(EXIT_FAILURE);
-               }
-
-               printf("Received %zd bytes: %s\n", nread, buf);
-           }
-
-           exit(EXIT_SUCCESS);
+	   return sfd;
        }
+
+int client_write(int sfd, uint64_t addr, int bytes, const uint8_t *ibuf)
+{
+  int nread;
+  rw_struct_t rw_struct;
+  rw_struct.cmd = 'w';
+  rw_struct.addr = addr;
+  rw_struct.bytes = bytes;
+  memcpy(rw_struct.iobuf, ibuf, bytes);
+  if (write(sfd, &rw_struct, bytes+offsetof(rw_struct_t, iobuf)) != 5) {
+    perror("write");
+    return -1;
+  }
+
+  nread = read(sfd, rw_struct.iobuf, bytes);
+  if (nread == -1) {
+    perror("read");
+    return -1;
+  }
+  return 0;
+}
+
+int client_read(int sfd, uint64_t addr, int bytes, uint8_t *obuf)
+{
+  int nread;
+  rw_struct_t rw_struct;
+  rw_struct.cmd = 'r';
+  rw_struct.addr = addr;
+  rw_struct.bytes = bytes;
+  if (write(sfd, &rw_struct, offsetof(rw_struct_t, iobuf)) != 5) {
+    perror("write");
+    return -1;
+  }
+
+  nread = read(sfd, obuf, bytes);
+  if (nread == -1) {
+    perror("read");
+    return -1;
+  }
+  return 0;
+}

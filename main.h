@@ -1,15 +1,10 @@
 
-typedef struct ws {
+typedef struct {
+  uint8_t cmd;
   uint64_t addr;
   int bytes;
-  uint8_t ibuf[];
-} wstruct_t;
-
-typedef struct rs {
-  uint64_t addr;
-  int bytes;
-  uint8_t obuf[];
-} rstruct_t;
+  uint8_t iobuf[8192];
+} rw_struct_t;
 
 #ifdef __cplusplus
 extern "C" {

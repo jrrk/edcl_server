@@ -7,8 +7,6 @@
 #include <netdb.h>
 #include "main.h"
 
-#define BUF_SIZE 500
-
 int main(int argc, char *argv[])
        {
            struct addrinfo hints;
@@ -17,7 +15,7 @@ int main(int argc, char *argv[])
            struct sockaddr_storage peer_addr;
            socklen_t peer_addr_len;
            ssize_t nread;
-           char buf[BUF_SIZE];
+	   rw_struct_t rw_struct;
 
            if (argc != 2) {
                fprintf(stderr, "Usage: %s port\n", argv[0]);
@@ -62,29 +60,27 @@ int main(int argc, char *argv[])
 
            freeaddrinfo(result);           /* No longer needed */
 
-           /* Read datagrams and echo them back to sender */
-
            for (;;) {
                peer_addr_len = sizeof(struct sockaddr_storage);
-               nread = recvfrom(sfd, buf, BUF_SIZE, 0,
+               nread = recvfrom(sfd, &rw_struct, sizeof(rw_struct), 0,
                        (struct sockaddr *) &peer_addr, &peer_addr_len);
                if (nread == -1)
                    continue;               /* Ignore failed request */
 
                char host[NI_MAXHOST], service[NI_MAXSERV];
 
+	       for (int i = 0; i < nread; i++) printf("%x: %x\n", i, ((char*)&rw_struct)[i]);
+	       
                s = getnameinfo((struct sockaddr *) &peer_addr,
                                peer_addr_len, host, NI_MAXHOST,
                                service, NI_MAXSERV, NI_NUMERICSERV);
-	       if (s == 0) switch(*buf)
+	       if (s == 0) switch(rw_struct.cmd)
 		{
 		case 'w':
 		  {
-		    wstruct_t wstruct;
-		    memcpy(&wstruct, buf+1, nread);
-		    edcl_write(wstruct.addr, wstruct.bytes, wstruct.ibuf);
-		    printf("edcl_write(%lx, %x, %x);\n", wstruct.addr, wstruct.bytes, *(uint32_t*)wstruct.ibuf);
-		    if (sendto(sfd, wstruct.ibuf, 0, 0,
+		    edcl_write(rw_struct.addr, rw_struct.bytes, rw_struct.iobuf);
+		    printf("edcl_write(%lx, %x, %x);\n", rw_struct.addr, rw_struct.bytes, *(uint32_t*)rw_struct.iobuf);
+		    if (sendto(sfd, rw_struct.iobuf, 0, 0,
 			       (struct sockaddr *) &peer_addr,
 			       peer_addr_len) != 0)
 		      fprintf(stderr, "Error sending response\n");
@@ -92,13 +88,11 @@ int main(int argc, char *argv[])
 		  }
 		case 'r':
 		  {
-		    rstruct_t rstruct;
-		    memcpy(&rstruct, buf+1, nread);
-		    edcl_read(rstruct.addr, rstruct.bytes, rstruct.obuf);
-		    printf("edcl_write(%lx, %x, %x);\n", rstruct.addr, rstruct.bytes, *(uint32_t*)rstruct.obuf);
-		    if (sendto(sfd, &rstruct.obuf, rstruct.bytes, 0,
+		    edcl_read(rw_struct.addr, rw_struct.bytes, rw_struct.iobuf);
+		    printf("edcl_read(%lx, %x, %x);\n", rw_struct.addr, rw_struct.bytes, *(uint32_t*)rw_struct.iobuf);
+		    if (sendto(sfd, &rw_struct.iobuf, rw_struct.bytes, 0,
 			       (struct sockaddr *) &peer_addr,
-			       peer_addr_len) != rstruct.bytes)
+			       peer_addr_len) != rw_struct.bytes)
 		      fprintf(stderr, "Error sending response\n");
 		    break;
 		  }
@@ -107,7 +101,7 @@ int main(int argc, char *argv[])
 		    uint64_t ptr;
 		    uint32_t data;
 		    int flush;
-		    if (3==sscanf(buf+1, "%lX,%X,%X", &ptr, &data, &flush))
+		    if (3==sscanf(((char *)&rw_struct)+1, "%lX,%X,%X", &ptr, &data, &flush))
 		      {
 			volatile uint32_t * const base = (volatile uint32_t*)ptr;
 			queue_write(base, data, flush);
@@ -126,7 +120,7 @@ int main(int argc, char *argv[])
 		    uint64_t ptr;
 		    uint32_t data;
 		    int flush;
-		    if (1==sscanf(buf+1, "%lX", &ptr))
+		    if (1==sscanf(((char *)&rw_struct)+1, "%lX", &ptr))
 		      {
 			volatile uint32_t * const base = (volatile uint32_t*)ptr;
 			data = queue_read(base);
