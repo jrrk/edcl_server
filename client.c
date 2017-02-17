@@ -54,6 +54,9 @@ int client_main(char *host, char *port)
            }
 
            freeaddrinfo(result);           /* No longer needed */
+
+	   write(sfd, "W700000,55,1", 13);
+	   write(sfd, "W700000,AA,1", 13);
 	   return sfd;
        }
 
@@ -62,6 +65,7 @@ static rw_struct_t rw_struct;
 int client_write(int sfd, uint64_t addr, int bytes, const uint8_t *ibuf)
 {
   int nread = bytes+__builtin_offsetof (rw_struct_t, iobuf);
+  memset(&rw_struct, 0, sizeof(rw_struct_t));
   rw_struct.cmd = 'w';
   rw_struct.addr = addr;
   rw_struct.bytes = bytes;
@@ -70,6 +74,7 @@ int client_write(int sfd, uint64_t addr, int bytes, const uint8_t *ibuf)
     perror("write");
     return -1;
   }
+  usleep(10000);
   nread = read(sfd, rw_struct.iobuf, 0);
   if (nread == -1) {
     perror("read");
@@ -81,6 +86,7 @@ int client_write(int sfd, uint64_t addr, int bytes, const uint8_t *ibuf)
 int client_read(int sfd, uint64_t addr, int bytes, uint8_t *obuf)
 {
   int nread = __builtin_offsetof (rw_struct_t, iobuf);
+  memset(&rw_struct, 0, sizeof(rw_struct_t));
   rw_struct.cmd = 'r';
   rw_struct.addr = addr;
   rw_struct.bytes = bytes;
@@ -88,6 +94,7 @@ int client_read(int sfd, uint64_t addr, int bytes, uint8_t *obuf)
     perror("write");
     return -1;
   }
+  usleep(10000);
   nread = read(sfd, obuf, bytes);
   if (nread == -1) {
     perror("read");

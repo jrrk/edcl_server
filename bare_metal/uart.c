@@ -58,7 +58,8 @@ int uart_tstchar(void)
   int rslt, cnt = 0;
   if (first) cbreak();
   rslt = ioctl(fd, FIONREAD, &cnt);
-  return cnt > 0;
+  if ((rslt < 0) | !cnt) return 0;
+  return uart_getchar();
 }
 
 volatile uint32_t *uart_base_ptr = (uint32_t *)(UART_BASE);
@@ -104,19 +105,15 @@ void uart_send_buf(const char *buf, const int32_t len) {
   for (i=0; i<len; i++) uart_send(buf[i]);
 }
 
-// check uart IRQ for read
-uint8_t uart_check_read_irq() {
-  return uart_tstchar();
-}
-
 // IRQ triggered read
 uint8_t uart_read_irq() {
   return uart_getchar();
 }
 
 uint8_t uart_recv() {
+  int ch = uart_tstchar();
   // wait until RBR has data
-  while(! uart_check_read_irq())
+  while(!ch)
     {
       uint32_t key;
       volatile uint32_t * const keyb_base = (volatile uint32_t*)(9<<20);
@@ -127,10 +124,12 @@ uint8_t uart_recv() {
 	  queue_write(keyb_base+1, 0, 0);
 	  ch = (queue_read(keyb_base+1) >> 8) & 127; /* strip off the scan code (default ascii code is UK) */
 	  if (ch == '\r') ch = '\n'; /* translate CR to LF, because nobody else will */
-	  return ch;
 	}
+      else
+	ch = uart_tstchar();  
+      usleep(10000);
     }
-  return uart_read_irq();
+  return ch;
 }
 
 // enable uart read IRQ

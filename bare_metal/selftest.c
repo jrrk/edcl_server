@@ -310,7 +310,10 @@ void mygets(char *cmd)
     {
       ch = uart_recv();
       uart_send(ch);
-      *chp++ = ch;
+      if (chp < linbuf+sizeof(linbuf))
+	*chp++ = ch;
+      else
+	abort();
     }
   while (ch != '\n');
   *--chp = 0;
