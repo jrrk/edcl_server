@@ -11,11 +11,10 @@
 namespace debugger {
 
 /** Class registration in the Core */
-REGISTER_CLASS(UdpService)
+//REGISTER_CLASS(UdpService)
 
-UdpService::UdpService(const char *name) 
-    : IService(name) {
-    registerInterface(static_cast<IUdp *>(this));
+UdpService::UdpService() 
+    : IService("udpedcl") {
     registerAttribute("Timeout", &timeout_);
     registerAttribute("BlockingMode", &blockmode_);
     registerAttribute("HostIP", &hostIP_);
@@ -33,9 +32,6 @@ UdpService::~UdpService() {
 
 void UdpService::postinitService() {
     createDatagramSocket();
-    // define hardcoded remote address:
-    remote_sockaddr_ipv4_ = sockaddr_ipv4_;
-    remote_sockaddr_ipv4_.sin_addr.s_addr = inet_addr(boardIP_.to_string());
 
     if (timeout_.to_int64()) {
         struct timeval tv;
@@ -133,6 +129,9 @@ bool UdpService::setBlockingMode(socket_def h, bool mode) {
 }
 
 int UdpService::sendData(const uint8_t *msg, int len) {
+    // define hardcoded remote address:
+    remote_sockaddr_ipv4_ = sockaddr_ipv4_;
+    remote_sockaddr_ipv4_.sin_addr.s_addr = inet_addr(boardIP_.to_string());  
     int tx_bytes = sendto(hsock_, reinterpret_cast<const char *>(msg), len, 0,
                   reinterpret_cast<struct sockaddr *>(&remote_sockaddr_ipv4_),
                   static_cast<int>(sizeof(remote_sockaddr_ipv4_)));
@@ -145,6 +144,7 @@ int UdpService::sendData(const uint8_t *msg, int len) {
 #endif
         return 1;
     } else {
+#ifdef VERBOSE
         char dbg[1024];
         int pos = RISCV_sprintf(dbg, sizeof(dbg), "send  %d bytes to %s:%d: ",
                                 tx_bytes,
@@ -158,6 +158,7 @@ int UdpService::sendData(const uint8_t *msg, int len) {
             }
         }
         RISCV_debug("%s", dbg);
+#endif
     }
     return tx_bytes;
 }
@@ -184,6 +185,7 @@ int UdpService::readData(const uint8_t *buf, int maxlen) {
             RISCV_error("Receiver's buffer overflow maxlen = %d", maxlen);
         }
         memcpy(const_cast<uint8_t *>(buf), rcvbuf, res);
+#ifdef VERBOSE
         char dbg[1024];
         int pos = RISCV_sprintf(dbg, sizeof(dbg), "received  %d Bytes: ", res);
         if (res < 64) {
@@ -193,6 +195,7 @@ int UdpService::readData(const uint8_t *buf, int maxlen) {
             }
         }
         RISCV_debug("%s", dbg);
+#endif
     }
     return res;
 }

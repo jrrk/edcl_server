@@ -20,7 +20,6 @@ class IClass : public IFace {
 public:
     IClass(const char *class_name) 
         : IFace(IFACE_CLASS), class_name_(class_name) {
-        RISCV_register_class(static_cast<IClass *>(this));
         listInstances_ = AttributeType(Attr_List);
     }
     virtual ~IClass() {

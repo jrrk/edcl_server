@@ -53,44 +53,15 @@ extern "C" int RISCV_printf(void *iface, int level,
                             const char *fmt, ...) {
     int ret = 0;
     va_list arg;
+    char buf[4096];
     IFace *iout = reinterpret_cast<IFace *>(iface);
 
     RISCV_mutex_lock(&mutex_printf);
-    if (iout == NULL) {
-        ret = RISCV_sprintf(bufLog, sizeof(bufLog), "[%s]: ", "unknown");
-    } else if (strcmp(iout->getFaceName(), IFACE_SERVICE) == 0) {
-        IService *iserv = static_cast<IService *>(iout);
-        AttributeType *local_level = 
-                static_cast<AttributeType *>(iserv->getAttribute("LogLevel"));
-        if (level > static_cast<int>(local_level->to_int64())) {
-            RISCV_mutex_unlock(&mutex_printf);
-            return 0;
-        }
-        ret = RISCV_sprintf(bufLog, sizeof(bufLog), "[%s]: ", 
-                                                   iserv->getObjName());
-    } else if (strcmp(iout->getFaceName(), IFACE_CLASS) == 0) {
-        IClass *icls = static_cast<IClass *>(iout);
-        ret = RISCV_sprintf(bufLog, sizeof(bufLog), "[%s]: ", 
-                                                   icls->getClassName());
-    } else {
-        ret = RISCV_sprintf(bufLog, sizeof(bufLog), "[%s]: ", 
-                                                   iout->getFaceName());
-    }
     va_start(arg, fmt);
-#if defined(_WIN32) || defined(__CYGWIN__)
-    ret += vsprintf_s(&bufLog[ret], sizeof(bufLog) - ret, fmt, arg);
-#else
-    ret += vsprintf(&bufLog[ret], fmt, arg);
-#endif
+    ret = vsprintf(buf, fmt, arg);
+    buf[ret] = '\n';
+    write(1, buf, ret+1);
     va_end(arg);
-
-    bufLog[ret++] = '\n';
-    bufLog[ret] = '\0';
-    if (default_console) {
-        default_console->writeBuffer(bufLog);
-    } else {
-        RISCV_print_bin(level, bufLog, ret);
-    }
     RISCV_mutex_unlock(&mutex_printf);
     return ret;
 }
@@ -124,33 +95,6 @@ extern "C" uint64_t RISCV_get_time_ms() {
     struct timeval tc;
     gettimeofday(&tc, NULL);
     return 1000*tc.tv_sec + tc.tv_usec/1000;
-#endif
-}
-
-extern "C" void RISCV_thread_create(void *data) {
-    LibThreadType *p = (LibThreadType *)data;
-#if defined(_WIN32) || defined(__CYGWIN__)
-    p->Handle = (thread_def)_beginthreadex(0, 0, p->func, p->args, 0, 0);
-#else
-    pthread_create(&p->Handle, 0, p->func, p->args);
-#endif
-}
-
-extern "C" uint64_t RISCV_thread_id() {
-	  uint64_t r;
-#if defined(_WIN32) || defined(__CYGWIN__)
-	  r = GetCurrentThreadId();
-#else
-	  r = pthread_self();
-#endif
-	  return r;
-}
-
-extern "C" void RISCV_thread_join(thread_def th, int ms) {
-#if defined(_WIN32) || defined(__CYGWIN__)
-    WaitForSingleObject(th, ms);
-#else
-    pthread_join(th, 0);
 #endif
 }
 

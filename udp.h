@@ -10,22 +10,24 @@
 
 #include "iclass.h"
 #include "iservice.h"
-#include "iudp.h"
+#include "irawlistener.h"
 #include <vector>
 
 namespace debugger {
 
-class UdpService : public IService, 
-                   public IUdp {
+static socket_def hsock_;
+  
+class UdpService : public IService {
 public:
     UdpService(const char *name);
+    UdpService();
     ~UdpService();
 
     /** IService interface */
-    virtual void postinitService();
+    void postinitService();
 
     /** IUdp interface */
-    virtual AttributeType getConnectionSettings() {
+    AttributeType getConnectionSettings() {
         AttributeType ret;
         ret.make_dict();
         ret["IP"] = AttributeType(inet_ntoa(sockaddr_ipv4_.sin_addr));
@@ -34,7 +36,7 @@ public:
         return ret;
     }
 
-    virtual void setTargetSettings(const AttributeType *target) {
+    void setTargetSettings(const AttributeType *target) {
         if (!target->is_dict()) {
             return;
         }
@@ -50,13 +52,13 @@ public:
      *                     false: Non-Blocking mode
      * @return true value on success.
      */
-    virtual bool setBlockingMode(socket_def h, bool mode);
+    bool setBlockingMode(socket_def h, bool mode);
 
-    virtual int sendData(const uint8_t *msg, int len);
+    int sendData(const uint8_t *msg, int len);
 
-    virtual int readData(const uint8_t *buf, int maxlen);
+    int readData(const uint8_t *buf, int maxlen);
 
-    virtual int registerListener(IRawListener *ilistener);
+    int registerListener(IRawListener *ilistener);
 
 protected:
     int createDatagramSocket();
@@ -73,11 +75,10 @@ private:
     char               sockaddr_ipv4_str_[16];    // 3 dots  + 4 digits each 3 symbols + '\0' = 4*3 + 3 + 1;
     unsigned short     sockaddr_ipv4_port_;
     struct sockaddr_in remote_sockaddr_ipv4_;
-    socket_def hsock_;
     char rcvbuf[4096];
 };
 
-DECLARE_CLASS(UdpService)
+// DECLARE_CLASS(UdpService)
 
 }  // namespace debugger
 

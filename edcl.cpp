@@ -10,40 +10,15 @@
 
 namespace debugger {
 
-/** Class registration in the Core */
-REGISTER_CLASS(EdclService)
-
-EdclService::EdclService(const char *name) : IService(name) {
-    registerInterface(static_cast<ITap *>(this));
-    registerAttribute("Transport", &transport_);
-    registerAttribute("seq_cnt", &seq_cnt_);
+EdclService::EdclService() : IService("EdclService") {
     seq_cnt_.make_uint64(0);
-    itransport_ = 0;
-}
-
-void EdclService::postinitService() {
-    IService *iserv = 
-        static_cast<IService *>(RISCV_get_service(transport_.to_string()));
-    if (!iserv) {
-        RISCV_error("Transport service '%'s not found", 
-                    transport_.to_string());
-    }
-    itransport_ = static_cast<IUdp *>(iserv->getInterface(IFACE_UDP));
-    if (!itransport_) {
-        RISCV_error("UDP interface '%s' not found", 
-                     transport_.to_string());
-    }
+    itransport_.postinitService();
 }
 
 int EdclService::read(uint64_t addr, int bytes, uint8_t *obuf) {
     int off;
     UdpEdclCommonType req = {0};
     UdpEdclCommonType rsp;
-
-    if (!itransport_) {
-        RISCV_error("UDP transport not defined, addr=%x", addr);
-        return 0;
-    }
 
     int rd_bytes = 0;
     while (rd_bytes < bytes && rd_bytes != -1) {
@@ -62,14 +37,14 @@ int EdclService::read(uint64_t addr, int bytes, uint8_t *obuf) {
         off = write32(tx_buf_, off, req.control.word);
         off = write32(tx_buf_, off, req.address);
 
-        off = itransport_->sendData(tx_buf_, off);
+        off = itransport_.sendData(tx_buf_, off);
         if (off == -1) {
             RISCV_error("Data sending error", NULL);
             rd_bytes = -1;
             break;
         }
 
-        off = itransport_->readData(rx_buf_, sizeof(rx_buf_));
+        off = itransport_.readData(rx_buf_, sizeof(rx_buf_));
         if (off == -1) {
             RISCV_error("Data receiving error", NULL);
             rd_bytes = -1;
@@ -83,12 +58,14 @@ int EdclService::read(uint64_t addr, int bytes, uint8_t *obuf) {
 
         rsp.control.word = read32(&rx_buf_[2]);
 
+#ifdef VERBOSE
         const char *NAK[2] = {"ACK", "NAK"};
         RISCV_debug("EDCL read: %s[%d], len = %d", 
                     NAK[rsp.control.response.nak],
                     rsp.control.response.seqidx,
                     rsp.control.response.len);
-
+#endif
+	
         // Retry with new sequence counter.
         if (rsp.control.response.nak) {
             RISCV_info("Sequence counter detected %d. Re-sending transaction.",
@@ -109,11 +86,6 @@ int EdclService::write(uint64_t addr, int bytes, uint8_t *ibuf) {
     UdpEdclCommonType req = {0};
     UdpEdclCommonType rsp;
 
-    if (!itransport_) {
-        RISCV_error("UDP transport not defined, addr=%x", addr);
-        return 0;
-    }
-
     int wr_bytes = 0;
     while (wr_bytes < bytes && wr_bytes != -1) {
         req.control.request.seqidx = 
@@ -133,14 +105,14 @@ int EdclService::write(uint64_t addr, int bytes, uint8_t *ibuf) {
         memcpy(&tx_buf_[off], &ibuf[wr_bytes], req.control.request.len);
 
 
-        off = itransport_->sendData(tx_buf_, off + req.control.request.len);
+        off = itransport_.sendData(tx_buf_, off + req.control.request.len);
         if (off == -1) {
             RISCV_error("Data sending error", NULL);
             wr_bytes = -1;
             break;
         }
 
-        off = itransport_->readData(rx_buf_, sizeof(rx_buf_));
+        off = itransport_.readData(rx_buf_, sizeof(rx_buf_));
         if (off == -1) {
             RISCV_error("Data receiving error", NULL);
             wr_bytes = -1;
@@ -154,6 +126,7 @@ int EdclService::write(uint64_t addr, int bytes, uint8_t *ibuf) {
 
         rsp.control.word = read32(&rx_buf_[2]);
 
+#ifdef VERBOSE
         // Warning:
         //   response length = 0;
         const char *NAK[2] = {"ACK", "NAK"};
@@ -161,7 +134,8 @@ int EdclService::write(uint64_t addr, int bytes, uint8_t *ibuf) {
                     NAK[rsp.control.response.nak],
                     rsp.control.response.seqidx,
                     req.control.request.len);
-
+#endif
+	
         // Retry with new sequence counter.
         if (rsp.control.response.nak) {
             RISCV_info("Sequence counter detected %d. Re-sending transaction.",

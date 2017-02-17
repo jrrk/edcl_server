@@ -7,17 +7,18 @@
 
 #include "api_core.h"
 #include "iservice.h"
-#include "iudp.h"
+#include "udp.h"
 #include "ithread.h"
-#include "itap.h"
 #include "ielfloader.h"
 #include "main.h"
+#include "edcl.h"
 #include <stdio.h>
 #include <string>
 #include <assert.h>
 
 using namespace debugger;
 
+#if 0
 /// Use it if configuration file was not found or failed.
 const char *default_config = 
 "{"
@@ -54,17 +55,16 @@ const char *default_config =
 "                ['BlockingMode',true],"
 "                ['HostIP','192.168.0.53'],"
 "                ['BoardIP','192.168.0.51']]}]}]}";
+#endif
 
 static AttributeType Config;
-static ITap *edcl_itap;
-static IElfLoader *iloader_;
+static EdclService edcl_itap;
 static char tmp[256], old[256];
 
 int edcl_read(uint64_t addr, int bytes, uint8_t *obuf)
 {
   int status;
-  if (!edcl_itap) edcl_main();
-  status = edcl_itap->read(addr,bytes,obuf);
+  status = edcl_itap.read(addr,bytes,obuf);
 #ifdef VERBOSE
   sprintf(tmp, "edcl_read(0x%.8lX, %d, 0x%.8lX);", addr, bytes, *(uint64_t *)obuf);
   if (strcmp(tmp,old))
@@ -78,7 +78,6 @@ int edcl_read(uint64_t addr, int bytes, uint8_t *obuf)
 
 int edcl_write(uint64_t addr, int bytes, uint8_t *ibuf)
 {
-  if (!edcl_itap) edcl_main();
 #ifdef VERBOSE
   sprintf(tmp, "edcl_write(0x%.8lX, %d, 0x%.8lX);", addr, bytes, *(uint64_t *)ibuf);
   if (strcmp(tmp,old))
@@ -87,36 +86,14 @@ int edcl_write(uint64_t addr, int bytes, uint8_t *ibuf)
       strcpy(old,tmp);
     }
 #endif
-  return edcl_itap->write(addr,bytes,ibuf);
+  return edcl_itap.write(addr,bytes,ibuf);
 }
 
 static int logf;
 
-int edcl_main(void)
-{
-  // Select configuration input (default/stored file):
-  RISCV_init();
-  Config.from_config(default_config);
-  
-  RISCV_set_configuration(&Config);
-  
-  edcl_itap = static_cast<ITap *>
-    (RISCV_get_service_iface("edcltap", IFACE_TAP));
-  iloader_ = static_cast<IElfLoader *>
-    (RISCV_get_service_iface("loader0", IFACE_ELFLOADER));
-}
-
-int edcl_loadelf(const char *elf)
-{
-  if (!iloader_)
-    edcl_main();
-  return iloader_->loadFile(elf);
-}
-
 void edcl_close(void)
 {
   if (logf) close(logf);
-  RISCV_cleanup();
 }
 
 void log_edcl(const char *fmt, ...)

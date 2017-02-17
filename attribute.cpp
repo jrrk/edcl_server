@@ -16,7 +16,6 @@ static AttributeType NilAttribute;
 static AutoBuffer strBuffer;
 
 char *attribute_to_string(const AttributeType *attr);
-const char *string_to_attribute(const char *cfg, AttributeType *out);
 
 void AttributeType::attr_free() {
     if (size()) {
@@ -180,10 +179,6 @@ char *AttributeType::to_config() {
     return strBuffer.getBuffer();
 }
 
-void AttributeType::from_config(const char *str) {
-    string_to_attribute(str, this);
-}
-
 char *attribute_to_string(const AttributeType *attr) {
     IService *iserv;
     AutoBuffer *buf = &strBuffer;
@@ -264,138 +259,6 @@ const char *skip_special_symbols(const char *cfg) {
     const char *pcur = cfg;
     while (*pcur == ' ' || *pcur == '\r' || *pcur == '\n' || *pcur == '\t') {
         pcur++;
-    }
-    return pcur;
-}
-
-const char *string_to_attribute(const char *cfg, 
-                          AttributeType *out) {
-    const char *pcur = skip_special_symbols(cfg);
-   
-    if (pcur[0] == '\'' || pcur[0] == '"') {
-        AutoBuffer buf;
-        uint8_t t1 = pcur[0];
-        int str_sz = 0;
-        pcur++;
-        while (*pcur != t1 && *pcur != '\0') {
-            pcur++;
-            str_sz++;
-        }
-        buf.write_bin(&cfg[1], str_sz);
-        pcur++;
-        out->make_string(buf.getBuffer());
-    } else if (pcur[0] == '[') {
-        pcur++;
-        pcur = skip_special_symbols(pcur);
-        AttributeType new_item;
-        out->make_list(0);
-        while (*pcur != ']' && *pcur != '\0') {
-            pcur = string_to_attribute(pcur, &new_item);
-            out->realloc_list(out->size() + 1);
-            (*out)[out->size() - 1] = new_item;
-
-            pcur = skip_special_symbols(pcur);
-            if (*pcur == ',') {
-                pcur++;
-                pcur = skip_special_symbols(pcur);
-            }
-        }
-        pcur++;
-        pcur = skip_special_symbols(pcur);
-    } else if (pcur[0] == '{') {
-        AttributeType new_key;
-        AttributeType new_value;
-        out->make_dict();
-
-        pcur++;
-        pcur = skip_special_symbols(pcur);
-        while (*pcur != '}' && *pcur != '\0') {
-            pcur = string_to_attribute(pcur, &new_key);
-            pcur = skip_special_symbols(pcur);
-            if (*pcur == ':') {
-                pcur++;
-            }
-            pcur = skip_special_symbols(pcur);
-            pcur = string_to_attribute(pcur, &new_value);
-
-            (*out)[new_key.to_string()] = new_value;
-
-            pcur = skip_special_symbols(pcur);
-            if (*pcur == ',') {
-                pcur++;
-                pcur = skip_special_symbols(pcur);
-            }
-        }
-        pcur++;
-        pcur = skip_special_symbols(pcur);
-
-        if (out->has_key("Type")) {
-            if (strcmp((*out)["Type"].to_string(), IFACE_SERVICE) == 0) {
-                IService *iserv; 
-                iserv = static_cast<IService *>(
-                        RISCV_get_service((*out)["ModuleName"].to_string()));
-                out->attr_free();
-                *out = AttributeType(iserv);
-            } else {
-                RISCV_printf(NULL, LOG_ERROR, 
-                        "Not implemented string to dict. attribute");
-            }
-        }
-    } else if (pcur[0] == '(') {
-        AutoBuffer buf;
-        char byte_value;
-        pcur++;
-        pcur = skip_special_symbols(pcur);
-        while (*pcur != ')' && *pcur != '\0') {
-            byte_value = 0;
-            for (int n = 0; n < 2; n++) {
-                if (*pcur >= 'A' && *pcur <= 'F') {
-                    byte_value = (byte_value << 4) | ((*pcur - 'A') + 10);
-                } else {
-                    byte_value = (byte_value << 4) | (*pcur - '0');
-                }
-                pcur++;
-            }
-            buf.write_bin(&byte_value, 1);
-
-            pcur = skip_special_symbols(pcur);
-            if (*pcur == ',') {
-                pcur++;
-                pcur = skip_special_symbols(pcur);
-            }
-        }
-        out->make_data(buf.size(), buf.getBuffer());
-        pcur++;
-        pcur = skip_special_symbols(pcur);
-    } else {
-        pcur = skip_special_symbols(pcur);
-        if (pcur[0] == 'N' && pcur[1] == 'o' && pcur[2] == 'n'
-                && pcur[3] == 'e') {
-            pcur += 4;
-        } else if (pcur[0] == 'f' && pcur[1] == 'a' && pcur[2] == 'l'
-                && pcur[3] == 's' && pcur[4] == 'e') {
-            pcur += 5;
-            out->make_boolean(false);
-        } else if (pcur[0] == 't' && pcur[1] == 'r' && pcur[2] == 'u'
-                && pcur[3] == 'e') {
-            pcur += 4;
-            out->make_boolean(true);
-        } else {
-            char digits[32] = {0};
-            int digits_cnt = 0;
-            if (pcur[0] == '0' && pcur[1] == 'x') {
-                pcur += 2;
-                digits[digits_cnt++] = '0';
-                digits[digits_cnt++] = 'x';
-            }
-            while ((*pcur >= '0' && *pcur <= '9') 
-                || (*pcur >= 'a' && *pcur <= 'f')
-                || (*pcur >= 'A' && *pcur <= 'F')) {
-                digits[digits_cnt++] = *pcur++;
-            }
-            int64_t t1 = strtoull(digits, NULL, 0);
-            out->make_int64(t1);
-        }
     }
     return pcur;
 }

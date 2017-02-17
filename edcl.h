@@ -10,23 +10,18 @@
 
 #include "iclass.h"
 #include "iservice.h"
-#include "itap.h"
-#include "iudp.h"
+#include "udp.h"
 #include <inttypes.h>
 
 namespace debugger {
 
-class EdclService : public IService,
-                    public ITap {
+class EdclService : public IService {
 public:
-    EdclService(const char *name);
-
-    /** IService interface */
-    virtual void postinitService();
+    EdclService();
 
     /** ITap interface */
-    virtual int read(uint64_t addr, int bytes, uint8_t *obuf);
-    virtual int write(uint64_t addr, int bytes, uint8_t *ibuf);
+     int read(uint64_t addr, int bytes, uint8_t *obuf);
+     int write(uint64_t addr, int bytes, uint8_t *ibuf);
 
 private:
     int write16(uint8_t *buf, int off, uint16_t v);
@@ -41,12 +36,10 @@ private:
 
     uint8_t tx_buf_[4096];
     uint8_t rx_buf_[4096];
-    IUdp *itransport_;
+    UdpService itransport_;
     AttributeType transport_;
     AttributeType seq_cnt_;
 };
-
-DECLARE_CLASS(EdclService)
 
 }  // namespace debugger
 
