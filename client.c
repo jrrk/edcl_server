@@ -12,16 +12,11 @@
 #include <string.h>
 #include "main.h"
 
-#define BUF_SIZE 500
-
 int client_main(char *host, char *port)
        {
            struct addrinfo hints;
            struct addrinfo *result, *rp;
-           int sfd, s, j;
-           size_t len;
-           ssize_t nread;
-           char buf[BUF_SIZE];
+           int sfd, s;
 
            /* Obtain address(es) matching host/port */
 
@@ -62,20 +57,20 @@ int client_main(char *host, char *port)
 	   return sfd;
        }
 
+static rw_struct_t rw_struct;
+
 int client_write(int sfd, uint64_t addr, int bytes, const uint8_t *ibuf)
 {
-  int nread;
-  rw_struct_t rw_struct;
+  int nread = bytes+__builtin_offsetof (rw_struct_t, iobuf);
   rw_struct.cmd = 'w';
   rw_struct.addr = addr;
   rw_struct.bytes = bytes;
   memcpy(rw_struct.iobuf, ibuf, bytes);
-  if (write(sfd, &rw_struct, bytes+offsetof(rw_struct_t, iobuf)) != 5) {
+  if (write(sfd, &rw_struct, nread) != nread) {
     perror("write");
     return -1;
   }
-
-  nread = read(sfd, rw_struct.iobuf, bytes);
+  nread = read(sfd, rw_struct.iobuf, 0);
   if (nread == -1) {
     perror("read");
     return -1;
@@ -85,16 +80,14 @@ int client_write(int sfd, uint64_t addr, int bytes, const uint8_t *ibuf)
 
 int client_read(int sfd, uint64_t addr, int bytes, uint8_t *obuf)
 {
-  int nread;
-  rw_struct_t rw_struct;
+  int nread = __builtin_offsetof (rw_struct_t, iobuf);
   rw_struct.cmd = 'r';
   rw_struct.addr = addr;
   rw_struct.bytes = bytes;
-  if (write(sfd, &rw_struct, offsetof(rw_struct_t, iobuf)) != 5) {
+  if (write(sfd, &rw_struct, nread) != nread) {
     perror("write");
     return -1;
   }
-
   nread = read(sfd, obuf, bytes);
   if (nread == -1) {
     perror("read");
