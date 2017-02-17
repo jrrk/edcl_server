@@ -1,7 +1,7 @@
 O = api_core.o api_utils.o attribute.o autobuffer.o edcl.o main.o udp.o # elfloader.o stub_main.o
 CPPFLAGS=-std=c++11 -g
 
-tester: serve.o libedcl.a
+tester: serve.o libedcl.a client.o
 	gcc -o $@ serve.o libedcl.a
 
 libedcl.o: $O
@@ -10,6 +10,7 @@ libedcl.o: $O
 libedcl.a: libedcl.o
 	rm -f $@
 	ar rc $@ libedcl.o
+
 
 clean:
 	rm -f tester $O

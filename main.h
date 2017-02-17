@@ -1,3 +1,16 @@
+
+typedef struct ws {
+  uint64_t addr;
+  int bytes;
+  uint8_t ibuf[];
+} wstruct_t;
+
+typedef struct rs {
+  uint64_t addr;
+  int bytes;
+  uint8_t obuf[];
+} rstruct_t;
+
 #ifdef __cplusplus
 extern "C" {
 #endif

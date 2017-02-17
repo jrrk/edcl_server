@@ -78,6 +78,30 @@ int main(int argc, char *argv[])
                                service, NI_MAXSERV, NI_NUMERICSERV);
 	       if (s == 0) switch(*buf)
 		{
+		case 'w':
+		  {
+		    wstruct_t wstruct;
+		    memcpy(&wstruct, buf+1, nread);
+		    edcl_write(wstruct.addr, wstruct.bytes, wstruct.ibuf);
+		    printf("edcl_write(%lx, %x, %x);\n", wstruct.addr, wstruct.bytes, *(uint32_t*)wstruct.ibuf);
+		    if (sendto(sfd, wstruct.ibuf, 0, 0,
+			       (struct sockaddr *) &peer_addr,
+			       peer_addr_len) != 0)
+		      fprintf(stderr, "Error sending response\n");
+		    break;
+		  }
+		case 'r':
+		  {
+		    rstruct_t rstruct;
+		    memcpy(&rstruct, buf+1, nread);
+		    edcl_read(rstruct.addr, rstruct.bytes, rstruct.obuf);
+		    printf("edcl_write(%lx, %x, %x);\n", rstruct.addr, rstruct.bytes, *(uint32_t*)rstruct.obuf);
+		    if (sendto(sfd, &rstruct.obuf, rstruct.bytes, 0,
+			       (struct sockaddr *) &peer_addr,
+			       peer_addr_len) != rstruct.bytes)
+		      fprintf(stderr, "Error sending response\n");
+		    break;
+		  }
 		case 'W':
 		  {
 		    uint64_t ptr;
