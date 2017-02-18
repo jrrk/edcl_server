@@ -23,9 +23,23 @@ int simple_write(volatile uint32_t *const addr, int data)
 
 int simple_read(volatile uint32_t *const addr)
 {
+  uint32_t data;
+  int cnt, nread;
   char buf[30];
   sprintf(buf, "R%p", addr);
   write(sfd, buf, strlen(buf)+1);
+  cnt = 0;
+  do {
+    usleep(10000);
+    nread = read(sfd, buf+cnt, sizeof(data)-cnt);
+    if (nread == -1) {
+      perror("read");
+      return -1;
+    }
+    cnt += nread;
+  } while (cnt < sizeof(data));
+  data = *(uint32_t *)buf;
+  return data;
 }
 
 int client_main(char *host, char *port)
