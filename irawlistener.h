@@ -8,15 +8,15 @@
 #ifndef __DEBUGGER_IRAW_LISTENER_H__
 #define __DEBUGGER_IRAW_LISTENER_H__
 
-#include "iface.h"
+//#include "iface.h"
 
 namespace debugger {
 
 static const char *IFACE_RAW_LISTENER = "IRawListener";
 
-class IRawListener : public IFace {
+class IRawListener {
 public:
-    IRawListener() : IFace(IFACE_RAW_LISTENER) {}
+    IRawListener() {}
 
     virtual void updateData(const char *buf, int buflen) =0;
 };

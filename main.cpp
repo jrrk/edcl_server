@@ -5,14 +5,15 @@
  * @brief      Test application to verify UDP/EDCL transport library.
  */
 
-#include "api_core.h"
+//#include "api_core.h"
 //#include "iservice.h"
 #include "udp.h"
-#include "ithread.h"
-#include "ielfloader.h"
+//#include "ithread.h"
+//#include "ielfloader.h"
 #include "main.h"
 #include "edcl.h"
 #include <stdio.h>
+#include <stdarg.h>
 #include <string>
 #include <assert.h>
 

@@ -10,7 +10,7 @@
 
 #include <stdint.h>
 #include <string.h>
-#include "iattr.h"
+//#include "iattr.h"
 
 namespace debugger {
 
@@ -31,7 +31,7 @@ enum KindType {
 
 class AttributePairType;
 
-class AttributeType : public IAttribute {
+class AttributeType {
   public:
     KindType kind_;
     unsigned size_;
@@ -44,7 +44,6 @@ class AttributeType : public IAttribute {
         AttributePairType *dict;
         uint8_t *data;
         void *py_object;
-        IFace *iface;
         char *uobject;
     } u_;
 
@@ -66,11 +65,6 @@ class AttributeType : public IAttribute {
 
     explicit AttributeType(const char *str) {
         make_string(str);
-    }
-
-    explicit AttributeType(IFace *mod) {
-        kind_ = Attr_Interface;
-        u_.iface = mod;
     }
 
     explicit AttributeType(KindType type) {
@@ -170,10 +164,6 @@ class AttributeType : public IAttribute {
 
     bool is_iface() const {
         return kind_ == Attr_Interface;
-    }
-
-    IFace *to_iface() const {
-        return u_.iface;
     }
 
     bool is_nil() const {

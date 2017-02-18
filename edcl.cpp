@@ -6,6 +6,7 @@
  */
 
 #include "edcl_types.h"
+#include "api_utils.h"
 #include "edcl.h"
 
 namespace debugger {

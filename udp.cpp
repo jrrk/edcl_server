@@ -5,7 +5,7 @@
  * @brief      UDP transport level implementation.
  */
 
-#include "api_core.h"
+#include "api_utils.h"
 #include "udp.h"
 
 namespace debugger {

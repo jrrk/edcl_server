@@ -86,7 +86,7 @@ void uart_write(volatile unsigned int * const sd_ptr, unsigned val);
 int cli_readline_into_buffer(const char *const prompt, char *buffer, int timeout);
 int queue_block_read(unsigned iobuf[], unsigned iobuflen);
 
-extern volatile unsigned int * const sd_base;
+  // extern volatile unsigned int * const sd_base;
 
   int edcl_main(void);
   void edcl_loadelf(const char *elf);

@@ -8,8 +8,10 @@
 #ifndef __DEBUGGER_UDP_SERVICE_H__
 #define __DEBUGGER_UDP_SERVICE_H__
 
-#include "iclass.h"
+//#include "iclass.h"
 //#include "iservice.h"
+#include "api_types.h"
+#include "attribute.h"
 #include "irawlistener.h"
 #include <vector>
 
