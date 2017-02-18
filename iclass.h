@@ -8,7 +8,7 @@
 #ifndef __DEBUGGER_CLASS_H__
 #define __DEBUGGER_CLASS_H__
 
-#include "iface.h"
+//#include "iface.h"
 #include "iservice.h"
 #include "api_core.h"
 
@@ -16,29 +16,34 @@ namespace debugger {
 
 static const char *const IFACE_CLASS = "IClass";
 
-class IClass : public IFace {
+class IClass  {
 public:
     IClass(const char *class_name) 
-        : IFace(IFACE_CLASS), class_name_(class_name) {
+        {
         listInstances_ = AttributeType(Attr_List);
     }
     ~IClass() {
+      /*
         for (unsigned i = 0; i < listInstances_.size(); i++) {
             delete static_cast<IService *>(listInstances_[i].to_iface());
         }
+      */
     }
 
     IService *createService(const char *obj_name);
 
     void postinitServices() {
+      /*
         IService *tmp = NULL;
         for (unsigned i = 0; i < listInstances_.size(); i++) {
             tmp = static_cast<IService *>(listInstances_[i].to_iface());
             tmp->postinitService();
         }
+      */
     }
 
     void predeleteServices(IService *inst) {
+      /*
         IService *tmp = NULL;
         for (unsigned i = 0; i < listInstances_.size(); i++) {
             tmp = static_cast<IService *>(listInstances_[i].to_iface());
@@ -46,6 +51,7 @@ public:
                 tmp->predeleteService();
             }
         }
+      */
     }
 
 

@@ -6,7 +6,7 @@
  */
 
 #include "api_core.h"
-#include "iservice.h"
+//#include "iservice.h"
 #include "udp.h"
 #include "ithread.h"
 #include "ielfloader.h"

@@ -8,18 +8,18 @@
 #ifndef __DEBUGGER_SERVICE_H__
 #define __DEBUGGER_SERVICE_H__
 
-#include "iface.h"
-#include "attribute.h"
+//#include "iface.h"
+//#include "attribute.h"
 #include "api_utils.h"
 
 namespace debugger {
 
 static const char *const IFACE_SERVICE = "IService";
 
-class IService : public IFace {
+class IService {
 public:
     IService(const char *obj_name) 
-        : IFace(IFACE_SERVICE) {
+        {
     /*
         listInterfaces_ = AttributeType(Attr_List);
         listAttributes_ = AttributeType(Attr_List);
@@ -32,7 +32,7 @@ public:
     ~IService() {}
     void postinitService() {}
     void predeleteService() {}
-
+    /*
     IFace *getInterface(const char *name) {
         IFace *tmp;
         for (unsigned i = 0; i < listInterfaces_.size(); i++) {
@@ -43,13 +43,14 @@ public:
         }
         return NULL;
     }
-
+    */
  private:
+    /*
     void initService(const AttributeType *args) {
         if (!args || !args->is_list()) {
             return;
         }
-	/*
+
         AttributeType *cur_attr;
         for (unsigned i = 0; i < args->size(); i++) {
             const AttributeType &item = (*args)[i];
@@ -64,9 +65,9 @@ public:
             }
             (*cur_attr) = item[1];
         }
-	*/
-    }
 
+    }
+*/
     /*
     void registerInterface(IFace *iface) {
         AttributeType item(iface);
@@ -110,9 +111,11 @@ public:
     }
     */
 protected:
+    /*
     AttributeType listInterfaces_;
     AttributeType listAttributes_;
     AttributeType logLevel_;
+    */
     const char *obj_name_;
 };
 

@@ -10,7 +10,7 @@
 
 namespace debugger {
 
-EdclService::EdclService() : IService("EdclService") {
+EdclService::EdclService()  {
     seq_cnt_.make_uint64(0);
     itransport_.postinitService();
 }

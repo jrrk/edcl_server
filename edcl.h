@@ -9,13 +9,13 @@
 #define __DEBUGGER_EDCL_H__
 
 #include "iclass.h"
-#include "iservice.h"
+//#include "iservice.h"
 #include "udp.h"
 #include <inttypes.h>
 
 namespace debugger {
 
-class EdclService : public IService {
+class EdclService  {
 public:
     EdclService();
 
