@@ -8,7 +8,7 @@
 #ifndef __DEBUGGER_EDCL_H__
 #define __DEBUGGER_EDCL_H__
 
-#include "iclass.h"
+//#include "iclass.h"
 //#include "iservice.h"
 #include "udp.h"
 #include <inttypes.h>

@@ -13,8 +13,7 @@ namespace debugger {
 /** Class registration in the Core */
 //REGISTER_CLASS(UdpService)
 
-UdpService::UdpService() 
-    : IService("udpedcl") {
+UdpService::UdpService()  {
   /*
     registerAttribute("Timeout", &timeout_);
     registerAttribute("BlockingMode", &blockmode_);

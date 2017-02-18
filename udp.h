@@ -9,7 +9,7 @@
 #define __DEBUGGER_UDP_SERVICE_H__
 
 #include "iclass.h"
-#include "iservice.h"
+//#include "iservice.h"
 #include "irawlistener.h"
 #include <vector>
 
@@ -17,7 +17,7 @@ namespace debugger {
 
 static socket_def hsock_;
   
-class UdpService : public IService {
+class UdpService {
 public:
     UdpService(const char *name);
     UdpService();
