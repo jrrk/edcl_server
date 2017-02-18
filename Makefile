@@ -1,4 +1,4 @@
-O = api_core.o api_utils.o attribute.o autobuffer.o edcl.o main.o udp.o # elfloader.o stub_main.o
+O = edcl.o main.o udp.o # api_core.o api_utils.o attribute.o autobuffer.o  # elfloader.o stub_main.o
 CPPFLAGS=-std=c++11 -g
 
 tester: serve.o libedcl.a client.o

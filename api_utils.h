@@ -28,23 +28,23 @@ void RISCV_set_default_output(void *iout);
 int RISCV_sprintf(char *s, size_t len, const char *fmt, ...);
 
 /** Format output to the default stream. */
-int RISCV_printf(void *iface, int level, const char *fmt, ...);
+int RISCV_printf(const char *fmt, ...);
 
 /** Output always */
 #define RISCV_printf0(fmt, ...) \
-    RISCV_printf(getInterface(IFACE_SERVICE), 0, fmt, __VA_ARGS__)
+    RISCV_printf(fmt, __VA_ARGS__)
 
 /** Output with the maximal logging level */
 #define RISCV_error(fmt, ...) \
-    RISCV_printf(getInterface(IFACE_SERVICE), LOG_ERROR, fmt, __VA_ARGS__)
+    RISCV_printf(fmt, __VA_ARGS__)
 
 /** Output with the information logging level */
 #define RISCV_info(fmt, ...) \
-    RISCV_printf(getInterface(IFACE_SERVICE), LOG_INFO, fmt, __VA_ARGS__)
+    RISCV_printf(fmt, __VA_ARGS__)
 
 /** Output with the lower logging level */
 #define RISCV_debug(fmt, ...) \
-    RISCV_printf(getInterface(IFACE_SERVICE), LOG_DEBUG, fmt, __VA_ARGS__)
+    RISCV_printf(fmt, __VA_ARGS__)
 
 /** Suspend thread on certain number of milliseconds */
 void RISCV_sleep_ms(int ms);

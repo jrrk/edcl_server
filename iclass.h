@@ -22,15 +22,15 @@ public:
         : IFace(IFACE_CLASS), class_name_(class_name) {
         listInstances_ = AttributeType(Attr_List);
     }
-    virtual ~IClass() {
+    ~IClass() {
         for (unsigned i = 0; i < listInstances_.size(); i++) {
             delete static_cast<IService *>(listInstances_[i].to_iface());
         }
     }
 
-    virtual IService *createService(const char *obj_name) =0;
+    IService *createService(const char *obj_name);
 
-    virtual void postinitServices() {
+    void postinitServices() {
         IService *tmp = NULL;
         for (unsigned i = 0; i < listInstances_.size(); i++) {
             tmp = static_cast<IService *>(listInstances_[i].to_iface());
@@ -38,7 +38,7 @@ public:
         }
     }
 
-    virtual void predeleteServices(IService *inst) {
+    void predeleteServices(IService *inst) {
         IService *tmp = NULL;
         for (unsigned i = 0; i < listInstances_.size(); i++) {
             tmp = static_cast<IService *>(listInstances_[i].to_iface());
@@ -49,9 +49,9 @@ public:
     }
 
 
-    virtual const char *getClassName() { return class_name_; }
-
-    virtual IService *getInstance(const char *name) {
+    const char *getClassName() { return class_name_; }
+    /*
+    IService *getInstance(const char *name) {
         IService *ret = NULL;
         for (unsigned i = 0; i < listInstances_.size(); i++) {
             ret = static_cast<IService *>(listInstances_[i].to_iface());
@@ -62,7 +62,7 @@ public:
         return NULL;
     }
 
-    virtual AttributeType getConfiguration() {
+    AttributeType getConfiguration() {
         AttributeType ret(Attr_Dict);
         ret["Class"] = AttributeType(getClassName());
         ret["Instances"] = AttributeType(Attr_List);
@@ -75,8 +75,8 @@ public:
         }
         return ret;
     }
-
-    virtual const AttributeType *getInstanceList() { return &listInstances_; }
+    */
+    const AttributeType *getInstanceList() { return &listInstances_; }
 
 protected:
     const char *class_name_;
@@ -91,7 +91,7 @@ protected:
 class name ## Class : public IClass { \
 public: \
     name ## Class () : IClass(# name "Class") {} \
-    virtual IService *createService(const char *obj_name) {  \
+    IService *createService(const char *obj_name) {  \
         name *serv = new name(obj_name); \
         AttributeType item(static_cast<IService *>(serv)); \
         listInstances_.add_to_list(&item); \

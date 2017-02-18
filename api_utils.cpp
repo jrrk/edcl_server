@@ -49,23 +49,6 @@ extern "C" void RISCV_print_bin(int level, char *buf, int len) {
 
 }
 
-extern "C" int RISCV_printf(void *iface, int level, 
-                            const char *fmt, ...) {
-    int ret = 0;
-    va_list arg;
-    char buf[4096];
-    IFace *iout = reinterpret_cast<IFace *>(iface);
-
-    RISCV_mutex_lock(&mutex_printf);
-    va_start(arg, fmt);
-    ret = vsprintf(buf, fmt, arg);
-    buf[ret] = '\n';
-    write(1, buf, ret+1);
-    va_end(arg);
-    RISCV_mutex_unlock(&mutex_printf);
-    return ret;
-}
-
 extern "C" int RISCV_sprintf(char *s, size_t len, const char *fmt, ...) {
     int ret;
     va_list arg;

@@ -14,9 +14,9 @@ namespace debugger {
 
 static const char *const IFACE_ATTRIBUTE = "IAttribute";
 
-class IAttribute : public IFace {
+class IAttribute {
 public:
-    IAttribute() : IFace(IFACE_ATTRIBUTE), attr_name_ (NULL) {}
+    IAttribute() {}
 
     virtual void setAttrName(const char *name) { attr_name_ = name; }
 

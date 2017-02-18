@@ -20,19 +20,36 @@ class IService : public IFace {
 public:
     IService(const char *obj_name) 
         : IFace(IFACE_SERVICE) {
+    /*
         listInterfaces_ = AttributeType(Attr_List);
         listAttributes_ = AttributeType(Attr_List);
         registerInterface(static_cast<IService *>(this));
         registerAttribute("LogLevel", &logLevel_);
         obj_name_ = obj_name;
         logLevel_.make_int64(LOG_ERROR);
+    */
     }
-    virtual ~IService() {}
+    ~IService() {}
+    void postinitService() {}
+    void predeleteService() {}
 
-    virtual void initService(const AttributeType *args) {
+    IFace *getInterface(const char *name) {
+        IFace *tmp;
+        for (unsigned i = 0; i < listInterfaces_.size(); i++) {
+            tmp = listInterfaces_[i].to_iface();
+            if (strcmp(name, tmp->getFaceName()) == 0) {
+                return tmp;
+            }
+        }
+        return NULL;
+    }
+
+ private:
+    void initService(const AttributeType *args) {
         if (!args || !args->is_list()) {
             return;
         }
+	/*
         AttributeType *cur_attr;
         for (unsigned i = 0; i < args->size(); i++) {
             const AttributeType &item = (*args)[i];
@@ -47,34 +64,22 @@ public:
             }
             (*cur_attr) = item[1];
         }
+	*/
     }
 
-    virtual void postinitService() {}
-    virtual void predeleteService() {}
-
-    virtual void registerInterface(IFace *iface) {
+    /*
+    void registerInterface(IFace *iface) {
         AttributeType item(iface);
         listInterfaces_.add_to_list(&item);
     }
 
-    virtual IFace *getInterface(const char *name) {
-        IFace *tmp;
-        for (unsigned i = 0; i < listInterfaces_.size(); i++) {
-            tmp = listInterfaces_[i].to_iface();
-            if (strcmp(name, tmp->getFaceName()) == 0) {
-                return tmp;
-            }
-        }
-        return NULL;
-    }
-
-    virtual void registerAttribute(const char *name, IAttribute *iface) {
+    void registerAttribute(const char *name, IAttribute *iface) {
         AttributeType item(iface);
         iface->setAttrName(name);
         listAttributes_.add_to_list(&item);
     }
 
-    virtual IAttribute *getAttribute(const char *name) {
+    IAttribute *getAttribute(const char *name) {
         IAttribute *tmp;
         for (unsigned i = 0; i < listAttributes_.size(); i++) {
             tmp = static_cast<IAttribute *>(listAttributes_[i].to_iface());
@@ -84,10 +89,10 @@ public:
         }
         return NULL;
     }
-
-    virtual const char *getObjName() { return obj_name_; }
-
-    virtual AttributeType getConfiguration() {
+    */
+    const char *getObjName() { return obj_name_; }
+    /*
+    AttributeType getConfiguration() {
         AttributeType ret(Attr_Dict);
         ret["Name"] = AttributeType(getObjName());
         ret["Attr"] = AttributeType(Attr_List);
@@ -103,7 +108,7 @@ public:
         }
         return ret;
     }
-
+    */
 protected:
     AttributeType listInterfaces_;
     AttributeType listAttributes_;

@@ -18,44 +18,18 @@
 
 using namespace debugger;
 
-#if 0
-/// Use it if configuration file was not found or failed.
-const char *default_config = 
-"{"
-"  'GlobalSettings':{"
-"    'SimEnable':false,"
-"    'GUI':'false',"
-"    'ScriptFile':''},"
-"  'Services':["
-"    {"
-"          'Class':'EdclServiceClass',"
-"          'Instances':["
-"            {"
-"              'Name':'edcltap',"
-"              'Attr':["
-"                ['LogLevel',0x1],"
-"                ['Transport','udpedcl'],"
-"                ['seq_cnt',0x1]]}]},"
-"        {"
-"          'Class':'UdpServiceClass',"
-"          'Instances':["
-"            {"
-"              'Name':'udpboard',"
-"              'Attr':["
-"                ['LogLevel',0x1],"
-"                ['Timeout',0x190],"
-"                ['BlockingMode',true],"
-"                ['HostIP','192.168.0.53'],"
-"                ['BoardIP','192.168.0.48']]},"
-"            {"
-"              'Name':'udpedcl',"
-"              'Attr':["
-"                ['LogLevel',0x1],"
-"                ['Timeout',0x3e8],"
-"                ['BlockingMode',true],"
-"                ['HostIP','192.168.0.53'],"
-"                ['BoardIP','192.168.0.51']]}]}]}";
-#endif
+extern "C" int RISCV_printf(const char *fmt, ...) {
+    int ret = 0;
+    va_list arg;
+    char buf[4096];
+
+    va_start(arg, fmt);
+    ret = vsprintf(buf, fmt, arg);
+    buf[ret] = '\n';
+    write(1, buf, ret+1);
+    va_end(arg);
+    return ret;
+}
 
 static AttributeType Config;
 static EdclService edcl_itap;

@@ -15,11 +15,12 @@ namespace debugger {
 
 UdpService::UdpService() 
     : IService("udpedcl") {
+  /*
     registerAttribute("Timeout", &timeout_);
     registerAttribute("BlockingMode", &blockmode_);
     registerAttribute("HostIP", &hostIP_);
     registerAttribute("BoardIP", &boardIP_);
-
+  */
     timeout_.make_int64(0);
     blockmode_.make_boolean(true);
     hostIP_.make_string("192.168.0.53");

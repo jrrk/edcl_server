@@ -59,7 +59,7 @@ class AttributeType : public IAttribute {
         u_.integer = 0;
     }
     ~AttributeType() {
-        attr_free();
+      //        attr_free();
     }
 
     void attr_free();
@@ -231,7 +231,7 @@ class AttributeType : public IAttribute {
         u_.data = new uint8_t[size];
         memcpy(u_.data, data, size);
     }
-
+    /*
     void make_list(unsigned size) {
         kind_ = Attr_List;
         size_ = size;
@@ -242,7 +242,7 @@ class AttributeType : public IAttribute {
         realloc_list(size()+1);
         (*this)[size()-1] = (*item);
     }
-
+    */
     void trim_list(unsigned start, unsigned end) {
         for (unsigned i = start; i < (size_ - end); i++) {
             u_.list[start + i] = u_.list[end + i];
