@@ -50,7 +50,7 @@ int edcl_read(uint64_t addr, int bytes, uint8_t *obuf)
   int status;
   if (!sfd)
     sfd = client_main("localhost", "1234");
-  status = client_read(sfd, addr, bytes, obuf);
+  status = client_read(addr, bytes, obuf);
 #ifdef VERBOSE
   {
   char tmp[80];
@@ -82,7 +82,7 @@ int edcl_write(uint64_t addr, int bytes, uint8_t *ibuf)
     }
   }
 #endif
-  return client_write(sfd, addr, bytes, ibuf);
+  return client_write(addr, bytes, ibuf);
 }
 
 enum edcl_mode {
@@ -156,7 +156,7 @@ int shared_write(volatile struct etrans *addr, int cnt, struct etrans *ibuf)
     return edcl_write((uint64_t)addr, cnt*sizeof(struct etrans), (uint8_t*)ibuf);
   }
 
-#define VERBOSE_FL
+//#define VERBOSE_FL
 
 int queue_flush(void)
 {
@@ -418,8 +418,6 @@ void log_printf(const char *fmt, ...);
 void uart_write(volatile uint32_t * const sd_ptr, uint32_t val);
 int cli_readline_into_buffer(const char *const prompt, char *buffer, int timeout);
 
-extern volatile uint32_t * const sd_base;
-
 void myputchar(char ch);
 void myputs(const char *str);
 int sdhci_write(struct bootstrap_host *host, uint32_t val, int reg);
@@ -556,14 +554,22 @@ void _get_card_status(int line, int verbose)
 
 void board_mmc_power_init(void)
 {
+  int chk;
   if (!sfd)
     sfd = client_main("localhost", "1234");
   queue_flush();
+  get_card_status(1);
+  card_response();
   write_led(0x55);
   write_led(0xAA);
   sd_clk_div(0x10);
+  chk = queue_read(sd_base+17);
+  printf("chk1 clk = %x\n", chk);
+  chk = simple_read(sd_base+17);
+  printf("chk2 clk = %x\n", chk);
+  get_card_status(1);
+
   sd_reset(1,1,0,0);
-  get_card_status(0);
   sd_blkcnt(1);
   sd_blksize(1);
 

@@ -93,7 +93,7 @@ void minion_console_putchar(unsigned char ch)
 
 void uart_send(uint8_t data) {
   uart_sendchar(data);
-  minion_console_putchar(data);
+  //  minion_console_putchar(data);
 }
 
 void uart_send_string(const char *str) {

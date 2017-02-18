@@ -1,0 +1,8 @@
+*.o
+*.a
+*.hex
+*.so
+*.riscv
+*~
+tester
+bare_metal/selftest

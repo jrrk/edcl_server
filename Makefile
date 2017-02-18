@@ -5,7 +5,7 @@ tester: serve.o libedcl.a client.o
 	gcc -o $@ serve.o libedcl.a
 
 libedcl.o: $O
-	ld -r -o libedcl.o $O -L/usr/lib/gcc/x86_64-linux-gnu/5 -L/usr/lib/x86_64-linux-gnu -lstdc++
+	ld -r -o libedcl.o $O -L/usr/lib/gcc/x86_64-linux-gnu/4.8 -L/usr/lib/x86_64-linux-gnu -lstdc++
 
 libedcl.a: libedcl.o
 	rm -f $@

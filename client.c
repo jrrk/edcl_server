@@ -12,11 +12,27 @@
 #include <string.h>
 #include "main.h"
 
+static int sfd;
+
+int simple_write(volatile uint32_t *const addr, int data)
+{
+  char buf[30];
+  sprintf(buf, "W%p,%.8X,1", addr, data);
+  write(sfd, buf, strlen(buf)+1);
+}
+
+int simple_read(volatile uint32_t *const addr)
+{
+  char buf[30];
+  sprintf(buf, "R%p", addr);
+  write(sfd, buf, strlen(buf)+1);
+}
+
 int client_main(char *host, char *port)
        {
            struct addrinfo hints;
            struct addrinfo *result, *rp;
-           int sfd, s;
+           int s;
 
            /* Obtain address(es) matching host/port */
 
@@ -55,14 +71,16 @@ int client_main(char *host, char *port)
 
            freeaddrinfo(result);           /* No longer needed */
 
-	   write(sfd, "W700000,55,1", 13);
-	   write(sfd, "W700000,AA,1", 13);
+	   simple_write(led_base,0x55);
+	   simple_write(led_base,0xAA);
+	   simple_write(led_base,0x00);
+	   simple_read(sd_base+5);
 	   return sfd;
        }
 
 static rw_struct_t rw_struct;
 
-int client_write(int sfd, uint64_t addr, int bytes, const uint8_t *ibuf)
+int client_write(uint64_t addr, int bytes, const uint8_t *ibuf)
 {
   int nread = bytes+__builtin_offsetof (rw_struct_t, iobuf);
   memset(&rw_struct, 0, sizeof(rw_struct_t));
@@ -70,6 +88,8 @@ int client_write(int sfd, uint64_t addr, int bytes, const uint8_t *ibuf)
   rw_struct.addr = addr;
   rw_struct.bytes = bytes;
   memcpy(rw_struct.iobuf, ibuf, bytes);
+  if (memcmp(rw_struct.iobuf, ibuf, bytes))
+    abort();
   if (write(sfd, &rw_struct, nread) != nread) {
     perror("write");
     return -1;
@@ -83,9 +103,9 @@ int client_write(int sfd, uint64_t addr, int bytes, const uint8_t *ibuf)
   return 0;
 }
 
-int client_read(int sfd, uint64_t addr, int bytes, uint8_t *obuf)
+int client_read(uint64_t addr, int bytes, uint8_t *obuf)
 {
-  int nread = __builtin_offsetof (rw_struct_t, iobuf);
+  int cnt, nread = __builtin_offsetof (rw_struct_t, iobuf);
   memset(&rw_struct, 0, sizeof(rw_struct_t));
   rw_struct.cmd = 'r';
   rw_struct.addr = addr;
@@ -94,11 +114,16 @@ int client_read(int sfd, uint64_t addr, int bytes, uint8_t *obuf)
     perror("write");
     return -1;
   }
-  usleep(10000);
-  nread = read(sfd, obuf, bytes);
-  if (nread == -1) {
-    perror("read");
-    return -1;
-  }
+  cnt = 0;
+  do {
+    usleep(10000);
+    nread = read(sfd, obuf+cnt, bytes-cnt);
+    if (nread == -1) {
+      perror("read");
+      return -1;
+    }
+    cnt += nread;
+  } while (cnt < bytes);
+
   return 0;
 }

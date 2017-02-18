@@ -9,13 +9,16 @@
 
 void dump(int nread, uint8_t *buf)
 {
-  for (int i = 0; i < nread; i++)
+  int i;
+  for (i = 0; i < nread; i++)
     {
       if ((i&15)==0) printf("\n%.3x:", i);
       printf(" %.2x", buf[i]);
     }
   putchar('\n');
 }
+
+static rw_struct_t rw_struct;
 
 int main(int argc, char *argv[])
        {
@@ -25,7 +28,6 @@ int main(int argc, char *argv[])
            struct sockaddr_storage peer_addr;
            socklen_t peer_addr_len;
            ssize_t nread;
-	   rw_struct_t rw_struct;
 
            if (argc != 2) {
                fprintf(stderr, "Usage: %s port\n", argv[0]);
@@ -70,9 +72,10 @@ int main(int argc, char *argv[])
 
            freeaddrinfo(result);           /* No longer needed */
 
-	   queue_flush();
+	   queue_flush_cond();
 	   
            for (;;) {
+	     memset(&rw_struct, 0, sizeof(rw_struct));
                peer_addr_len = sizeof(struct sockaddr_storage);
                nread = recvfrom(sfd, &rw_struct, sizeof(rw_struct), 0,
                        (struct sockaddr *) &peer_addr, &peer_addr_len);
@@ -80,7 +83,7 @@ int main(int argc, char *argv[])
                    continue;               /* Ignore failed request */
 
                char host[NI_MAXHOST], service[NI_MAXSERV];
-#define VERBOSE1
+//#define VERBOSE1
 #ifdef VERBOSE1
 	       dump(nread, (uint8_t*)&rw_struct);
 #else
@@ -93,10 +96,11 @@ int main(int argc, char *argv[])
 		{
 		case 'w':
 		  {
-		    queue_flush();
-		    edcl_write(rw_struct.addr, rw_struct.bytes, rw_struct.iobuf);
-#ifdef VERBOSE
-		    printf("\nedcl_write(%lx, %x, %x);\n", rw_struct.addr, rw_struct.bytes, *(uint32_t*)rw_struct.iobuf);
+		    queue_flush_cond();
+		    log_edcl_write(rw_struct.addr, rw_struct.bytes, rw_struct.iobuf);
+#ifdef VERBOSE1
+		    printf("\nedcl_write(%lx, %x, ..\n", rw_struct.addr, rw_struct.bytes);
+		    dump(rw_struct.bytes, rw_struct.iobuf);
 #else		    
 		    //	       printf("out=%d\n", 0);
 #endif
@@ -108,16 +112,16 @@ int main(int argc, char *argv[])
 		  }
 		case 'r':
 		  {
-		    queue_flush();
-		    edcl_read(rw_struct.addr, rw_struct.bytes, rw_struct.iobuf);
-#ifdef VERBOSE
+		    queue_flush_cond();
+		    log_edcl_read(rw_struct.addr, rw_struct.bytes, rw_struct.iobuf);
+#ifdef VERBOSE1
 		    printf("\nedcl_read(%lx, %x, ...\n",
 			   rw_struct.addr, rw_struct.bytes);
 		    dump(rw_struct.bytes, rw_struct.iobuf);
 #else
 		    //		    printf("out=%d\n", rw_struct.bytes);
 #endif		    
-		    if (sendto(sfd, &rw_struct.iobuf, rw_struct.bytes, 0,
+		    if (sendto(sfd, rw_struct.iobuf, rw_struct.bytes, 0,
 			       (struct sockaddr *) &peer_addr,
 			       peer_addr_len) != rw_struct.bytes)
 		      fprintf(stderr, "Error sending response\n");

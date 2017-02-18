@@ -61,7 +61,7 @@ static AttributeType Config;
 static EdclService edcl_itap;
 static char tmp[256], old[256];
 
-int edcl_read(uint64_t addr, int bytes, uint8_t *obuf)
+int _edcl_read(uint64_t addr, int bytes, uint8_t *obuf)
 {
   int status;
   status = edcl_itap.read(addr,bytes,obuf);
@@ -76,7 +76,7 @@ int edcl_read(uint64_t addr, int bytes, uint8_t *obuf)
   return status;
 }
 
-int edcl_write(uint64_t addr, int bytes, uint8_t *ibuf)
+int _edcl_write(uint64_t addr, int bytes, uint8_t *ibuf)
 {
 #ifdef VERBOSE
   sprintf(tmp, "edcl_write(0x%.8lX, %d, 0x%.8lX);", addr, bytes, *(uint64_t *)ibuf);
@@ -146,7 +146,7 @@ void log_edcl(const char *fmt, ...)
 
 int log_edcl_read(uint64_t addr, int bytes, uint8_t *obuf)
 {
-  int i, rslt = edcl_read(addr, bytes, obuf);
+  int i, rslt = _edcl_read(addr, bytes, obuf);
   log_edcl("edcl_read(%X,%X) =>", addr, bytes);
   for (i = 0; i < bytes; i++) log_edcl(" %.2X", obuf[i]);
   log_edcl("\n");
@@ -158,7 +158,7 @@ int log_edcl_write(uint64_t addr, int bytes, uint8_t *ibuf)
   log_edcl("edcl_write(%X,%X) =>", addr, bytes);
   for (i = 0; i < bytes; i++) log_edcl(" %.2X", ibuf[i]);
   log_edcl("\n");
-  return edcl_write(addr, bytes, ibuf);
+  return _edcl_write(addr, bytes, ibuf);
 }
 
 enum edcl_mode {
@@ -187,9 +187,9 @@ void edcl_bootstrap(int entry)
   tmp.val = 0xDEADBEEF;
   tmp.mode = edcl_mode_bootstrap;
   tmp.ptr = (uint32_t *)(size_t)entry;
-  edcl_write(0, sizeof(struct etrans), (uint8_t*)&tmp);
-  edcl_read(0, sizeof(struct etrans), (uint8_t*)&tmp2);
-  edcl_write(edcl_max*sizeof(struct etrans), sizeof(struct etrans), (uint8_t*)&tmp);
+  log_edcl_write(0, sizeof(struct etrans), (uint8_t*)&tmp);
+  log_edcl_read(0, sizeof(struct etrans), (uint8_t*)&tmp2);
+  log_edcl_write(edcl_max*sizeof(struct etrans), sizeof(struct etrans), (uint8_t*)&tmp);
 }
 
 /* shared address space pointer (appears at 0x800000 in minion address map */
@@ -198,7 +198,7 @@ volatile uint32_t * const rxfifo_base = (volatile uint32_t*)(4<<20);
 
 int shared_read(volatile struct etrans *addr, int cnt, struct etrans *obuf)
   {
-    int rslt = edcl_read((uint64_t)addr, cnt*sizeof(struct etrans), (uint8_t*)obuf);
+    int rslt = log_edcl_read((uint64_t)addr, cnt*sizeof(struct etrans), (uint8_t*)obuf);
 #ifdef EDCL_VERBOSE4
     int i;
     for (i = 0; i < cnt; i++)
@@ -224,7 +224,7 @@ int shared_write(volatile struct etrans *addr, int cnt, struct etrans *ibuf)
 	}
       }
 #endif	
-    return edcl_write((uint64_t)addr, cnt*sizeof(struct etrans), (uint8_t*)ibuf);
+    return log_edcl_write((uint64_t)addr, cnt*sizeof(struct etrans), (uint8_t*)ibuf);
   }
 
 int queue_flush(void)
@@ -275,6 +275,11 @@ int queue_flush(void)
   edcl_trans[0].mode = edcl_mode_read;
   edcl_trans[0].ptr = (volatile uint32_t*)(8<<20);
   return cnt;
+}
+
+int queue_flush_cond(void)
+{
+  if (edcl_cnt != 1) queue_flush();
 }
 
 void queue_write(volatile uint32_t *const sd_ptr, uint32_t val, int flush)
@@ -351,7 +356,7 @@ int queue_block_read1(uint32_t tmpbuf[], int max)
    printk("queue_block_read1 completed\n");
 #endif
    if (cnt > tmp.mode) cnt = tmp.mode;
-   edcl_read((uint64_t)(shared_base+1), cnt*sizeof(uint32_t), (uint8_t*)tmpbuf);
+   log_edcl_read((uint64_t)(shared_base+1), cnt*sizeof(uint32_t), (uint8_t*)tmpbuf);
    return cnt;
 }
 
