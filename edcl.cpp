@@ -11,20 +11,30 @@
 
 namespace debugger {
 
-EdclService::EdclService()  {
-    seq_cnt_.make_uint64(0);
+    uint8_t tx_buf_[4096];
+    uint8_t rx_buf_[4096];
+    UdpService itransport_;
+  uint64_t seq_cnt_;
+
+  static int first;
+
+void EdclService_EdclService()  {
+    seq_cnt_ = (0);
     itransport_.postinitService();
+    first = 1;
 }
 
-int EdclService::read(uint64_t addr, int bytes, uint8_t *obuf) {
+int EdclService_read(uint64_t addr, int bytes, uint8_t *obuf) {
     int off;
     UdpEdclCommonType req = {0};
     UdpEdclCommonType rsp;
 
     int rd_bytes = 0;
+
+    if (!first) EdclService_EdclService();
+      
     while (rd_bytes < bytes && rd_bytes != -1) {
-        req.control.request.seqidx = 
-                    static_cast<uint32_t>(seq_cnt_.to_uint64());
+        req.control.request.seqidx = seq_cnt_;
         req.control.request.write = 0;
         req.address = static_cast<uint32_t>(addr + rd_bytes);
         if ((bytes - rd_bytes) > EDCL_PAYLOAD_MAX_BYTES) {
@@ -34,9 +44,9 @@ int EdclService::read(uint64_t addr, int bytes, uint8_t *obuf) {
             req.control.request.len = static_cast<uint32_t>(bytes - rd_bytes);
         }
 
-        off = write16(tx_buf_, 0, req.offset);
-        off = write32(tx_buf_, off, req.control.word);
-        off = write32(tx_buf_, off, req.address);
+        off = EdclService_write16(tx_buf_, 0, req.offset);
+        off = EdclService_write32(tx_buf_, off, req.control.word);
+        off = EdclService_write32(tx_buf_, off, req.address);
 
         off = itransport_.sendData(tx_buf_, off);
         if (off == -1) {
@@ -57,7 +67,7 @@ int EdclService::read(uint64_t addr, int bytes, uint8_t *obuf) {
             break;
         }
 
-        rsp.control.word = read32(&rx_buf_[2]);
+        rsp.control.word = EdclService_read32(&rx_buf_[2]);
 
 #ifdef VERBOSE
         const char *NAK[2] = {"ACK", "NAK"};
@@ -71,26 +81,28 @@ int EdclService::read(uint64_t addr, int bytes, uint8_t *obuf) {
         if (rsp.control.response.nak) {
             RISCV_info("Sequence counter detected %d. Re-sending transaction.",
                          rsp.control.response.seqidx);
-            seq_cnt_.make_uint64(rsp.control.response.seqidx);
+            seq_cnt_ = rsp.control.response.seqidx;
             continue;
         }
 
         memcpy(&obuf[rd_bytes], &rx_buf_[10], rsp.control.response.len);
         rd_bytes += rsp.control.response.len;
-        seq_cnt_.make_uint64(seq_cnt_.to_uint64() + 1);
+        seq_cnt_ = seq_cnt_ + 1;
     }
     return rd_bytes;
 }
 
-int EdclService::write(uint64_t addr, int bytes, uint8_t *ibuf) {
+int EdclService_write(uint64_t addr, int bytes, uint8_t *ibuf) {
     int off;
     UdpEdclCommonType req = {0};
     UdpEdclCommonType rsp;
 
     int wr_bytes = 0;
+
+    if (!first) EdclService_EdclService();
+
     while (wr_bytes < bytes && wr_bytes != -1) {
-        req.control.request.seqidx = 
-                    static_cast<uint32_t>(seq_cnt_.to_uint64());
+      req.control.request.seqidx = seq_cnt_;
         req.control.request.write = 1;
         req.address = static_cast<uint32_t>(addr + wr_bytes);
         if ((bytes - wr_bytes) > EDCL_PAYLOAD_MAX_BYTES) {
@@ -100,9 +112,9 @@ int EdclService::write(uint64_t addr, int bytes, uint8_t *ibuf) {
             req.control.request.len = static_cast<uint32_t>(bytes - wr_bytes);
         }
 
-        off = write16(tx_buf_, 0, req.offset);
-        off = write32(tx_buf_, off, req.control.word);
-        off = write32(tx_buf_, off, req.address);
+        off = EdclService_write16(tx_buf_, 0, req.offset);
+        off = EdclService_write32(tx_buf_, off, req.control.word);
+        off = EdclService_write32(tx_buf_, off, req.address);
         memcpy(&tx_buf_[off], &ibuf[wr_bytes], req.control.request.len);
 
 
@@ -125,7 +137,7 @@ int EdclService::write(uint64_t addr, int bytes, uint8_t *ibuf) {
             break;
         }
 
-        rsp.control.word = read32(&rx_buf_[2]);
+        rsp.control.word = EdclService_read32(&rx_buf_[2]);
 
 #ifdef VERBOSE
         // Warning:
@@ -141,23 +153,23 @@ int EdclService::write(uint64_t addr, int bytes, uint8_t *ibuf) {
         if (rsp.control.response.nak) {
             RISCV_info("Sequence counter detected %d. Re-sending transaction.",
                          rsp.control.response.seqidx);
-            seq_cnt_.make_uint64(rsp.control.response.seqidx);
+            seq_cnt_ = rsp.control.response.seqidx;
             continue;
         }
 
         wr_bytes += req.control.request.len;
-        seq_cnt_.make_uint64(seq_cnt_.to_uint64() + 1);
+        seq_cnt_ = seq_cnt_ + 1;
     }
     return wr_bytes;
 }
 
-int EdclService::write16(uint8_t *buf, int off, uint16_t v) {
+int EdclService_write16(uint8_t *buf, int off, uint16_t v) {
     buf[off++] = (uint8_t)((v >> 8) & 0xFF);
     buf[off++] = (uint8_t)(v & 0xFF);
     return off;
 }
 
-int EdclService::write32(uint8_t *buf, int off, uint32_t v) {
+int EdclService_write32(uint8_t *buf, int off, uint32_t v) {
     buf[off++] = (uint8_t)((v >> 24) & 0xFF);
     buf[off++] = (uint8_t)((v >> 16) & 0xFF);
     buf[off++] = (uint8_t)((v >> 8) & 0xFF);
@@ -165,7 +177,7 @@ int EdclService::write32(uint8_t *buf, int off, uint32_t v) {
     return off;
 }
 
-uint32_t EdclService::read32(uint8_t *buf) {
+uint32_t EdclService_read32(uint8_t *buf) {
     return (buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | (buf[3] << 0);
 }
 

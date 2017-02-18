@@ -32,14 +32,12 @@ extern "C" int RISCV_printf(const char *fmt, ...) {
     return ret;
 }
 
-static AttributeType Config;
-static EdclService edcl_itap;
 static char tmp[256], old[256];
 
 int _edcl_read(uint64_t addr, int bytes, uint8_t *obuf)
 {
   int status;
-  status = edcl_itap.read(addr,bytes,obuf);
+  status = EdclService_read(addr,bytes,obuf);
 #ifdef VERBOSE
   sprintf(tmp, "edcl_read(0x%.8lX, %d, 0x%.8lX);", addr, bytes, *(uint64_t *)obuf);
   if (strcmp(tmp,old))
@@ -61,7 +59,7 @@ int _edcl_write(uint64_t addr, int bytes, uint8_t *ibuf)
       strcpy(old,tmp);
     }
 #endif
-  return edcl_itap.write(addr,bytes,ibuf);
+  return EdclService_write(addr,bytes,ibuf);
 }
 
 static int logf;

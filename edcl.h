@@ -15,31 +15,26 @@
 
 namespace debugger {
 
-class EdclService  {
+  /*
+struct EdclService  {
 public:
     EdclService();
-
+  */
     /** ITap interface */
-     int read(uint64_t addr, int bytes, uint8_t *obuf);
-     int write(uint64_t addr, int bytes, uint8_t *ibuf);
+     int EdclService_read(uint64_t addr, int bytes, uint8_t *obuf);
+     int EdclService_write(uint64_t addr, int bytes, uint8_t *ibuf);
 
-private:
-    int write16(uint8_t *buf, int off, uint16_t v);
-    int write32(uint8_t *buf, int off, uint32_t v);
-    uint32_t read32(uint8_t *buf);
+     //private:
+    int EdclService_write16(uint8_t *buf, int off, uint16_t v);
+    int EdclService_write32(uint8_t *buf, int off, uint32_t v);
+    uint32_t EdclService_read32(uint8_t *buf);
 
-private:
     /** This is limitation of the MAC fifo. Protocol allows increase the
      * following value up to 242 words. */
     static const int EDCL_PAYLOAD_MAX_WORDS32 = 8;
     static const int EDCL_PAYLOAD_MAX_BYTES  = 4*EDCL_PAYLOAD_MAX_WORDS32;
 
-    uint8_t tx_buf_[4096];
-    uint8_t rx_buf_[4096];
-    UdpService itransport_;
-    AttributeType transport_;
-    AttributeType seq_cnt_;
-};
+    //};
 
 }  // namespace debugger
 
