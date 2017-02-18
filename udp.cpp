@@ -12,11 +12,11 @@ namespace debugger {
   
 static socket_def hsock_;
 
-    std::vector<IRawListener *> vecListeners_;
+  //    std::vector<IRawListener *> vecListeners_;
     AttributeType timeout_;
     AttributeType blockmode_;
-    AttributeType hostIP_;
-    AttributeType boardIP_;
+    const char *hostIP_ = ("192.168.0.53");
+    const char *boardIP_ = ("192.168.0.51");
     
     struct sockaddr_in sockaddr_ipv4_;
     char               sockaddr_ipv4_str_[16];    // 3 dots  + 4 digits each 3 symbols + '\0' = 4*3 + 3 + 1;
@@ -27,8 +27,6 @@ static socket_def hsock_;
 void UdpService_UdpService()  {
     timeout_.make_int64(0);
     blockmode_.make_boolean(true);
-    hostIP_.make_string("192.168.0.53");
-    boardIP_.make_string("192.168.0.51");
 }
   /*
 UdpService::~UdpService() {
@@ -57,12 +55,12 @@ void UdpService_postinitService() {
         UdpService_setBlockingMode(hsock_, false);
     }
 }
-
+  /*
 int UdpService_registerListener(IRawListener *ilistener) { 
     vecListeners_.push_back(ilistener);
     return 0;
 }
-
+  */
 int UdpService_createDatagramSocket() {
     char hostName[256];
     if(gethostname(hostName, sizeof(hostName)) < 0) {
@@ -71,7 +69,7 @@ int UdpService_createDatagramSocket() {
 
     memset(&sockaddr_ipv4_, 0, sizeof (sockaddr_ipv4_));
     sockaddr_ipv4_.sin_family = AF_INET;
-    inet_aton(hostIP_.to_string(), &(sockaddr_ipv4_.sin_addr));
+    inet_aton(hostIP_, &(sockaddr_ipv4_.sin_addr));
     hsock_ = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (hsock_ < 0) {
         perror("Fatal error: socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)");
@@ -83,7 +81,7 @@ int UdpService_createDatagramSocket() {
                               sizeof(sockaddr_ipv4_));
     if (res != 0) {
       char err[99];
-      sprintf(err, "Fatal error: bind(hsock_, \"%s\", ...)", hostIP_.to_string());
+      sprintf(err, "Fatal error: bind(hsock_, \"%s\", ...)", hostIP_);
       perror(err);
         //setLibError(ERR_UDPSOCKET_BIND);
         return -1;
@@ -136,7 +134,7 @@ bool UdpService_setBlockingMode(socket_def h, bool mode) {
 int UdpService_sendData(const uint8_t *msg, int len) {
     // define hardcoded remote address:
     remote_sockaddr_ipv4_ = sockaddr_ipv4_;
-    remote_sockaddr_ipv4_.sin_addr.s_addr = inet_addr(boardIP_.to_string());  
+    remote_sockaddr_ipv4_.sin_addr.s_addr = inet_addr(boardIP_);  
     int tx_bytes = sendto(hsock_, reinterpret_cast<const char *>(msg), len, 0,
                   reinterpret_cast<struct sockaddr *>(&remote_sockaddr_ipv4_),
                   static_cast<int>(sizeof(remote_sockaddr_ipv4_)));

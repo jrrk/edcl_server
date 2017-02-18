@@ -4,12 +4,9 @@ CPPFLAGS=-std=c++11 -g
 tester: serve.o libedcl.a client.o
 	gcc -o $@ serve.o libedcl.a
 
-libedcl.o: $O
-	ld -r -o libedcl.o $O -L/usr/lib/gcc/x86_64-linux-gnu/4.8 -L/usr/lib/x86_64-linux-gnu -lstdc++
-
-libedcl.a: libedcl.o
+libedcl.a: $O
 	rm -f $@
-	ar rc $@ libedcl.o
+	ar rc $@ $O
 
 libclient.o: client.o
 	ld -r -o libclient.o client.o

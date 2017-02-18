@@ -62,11 +62,11 @@ class AttributeType {
     }
 
     void attr_free();
-
+    /*
     explicit AttributeType(const char *str) {
         make_string(str);
     }
-
+    */
     explicit AttributeType(KindType type) {
         kind_ = type;
         size_ = 0;
@@ -203,7 +203,7 @@ class AttributeType {
         size_ = 0;
         u_.boolean = value;
     }
-
+    /*
     void make_string(const char *value) {
         if (value) {
             kind_ = Attr_String;
@@ -214,7 +214,7 @@ class AttributeType {
             kind_ = Attr_Nil;
         }
     }
-
+    */
     void make_data(unsigned size, const void *data) {
         kind_ = Attr_Data;
         size_ = size;
