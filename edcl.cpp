@@ -13,14 +13,14 @@ namespace debugger {
 
     uint8_t tx_buf_[4096];
     uint8_t rx_buf_[4096];
-    UdpService itransport_;
   uint64_t seq_cnt_;
 
   static int first;
 
 void EdclService_EdclService()  {
     seq_cnt_ = (0);
-    itransport_.postinitService();
+    UdpService_UdpService();
+    UdpService_postinitService();
     first = 1;
 }
 
@@ -48,14 +48,14 @@ int EdclService_read(uint64_t addr, int bytes, uint8_t *obuf) {
         off = EdclService_write32(tx_buf_, off, req.control.word);
         off = EdclService_write32(tx_buf_, off, req.address);
 
-        off = itransport_.sendData(tx_buf_, off);
+        off = UdpService_sendData(tx_buf_, off);
         if (off == -1) {
             RISCV_error("Data sending error", NULL);
             rd_bytes = -1;
             break;
         }
 
-        off = itransport_.readData(rx_buf_, sizeof(rx_buf_));
+        off = UdpService_readData(rx_buf_, sizeof(rx_buf_));
         if (off == -1) {
             RISCV_error("Data receiving error", NULL);
             rd_bytes = -1;
@@ -118,14 +118,14 @@ int EdclService_write(uint64_t addr, int bytes, uint8_t *ibuf) {
         memcpy(&tx_buf_[off], &ibuf[wr_bytes], req.control.request.len);
 
 
-        off = itransport_.sendData(tx_buf_, off + req.control.request.len);
+        off = UdpService_sendData(tx_buf_, off + req.control.request.len);
         if (off == -1) {
             RISCV_error("Data sending error", NULL);
             wr_bytes = -1;
             break;
         }
 
-        off = itransport_.readData(rx_buf_, sizeof(rx_buf_));
+        off = UdpService_readData(rx_buf_, sizeof(rx_buf_));
         if (off == -1) {
             RISCV_error("Data receiving error", NULL);
             wr_bytes = -1;

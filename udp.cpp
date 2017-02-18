@@ -9,29 +9,34 @@
 #include "udp.h"
 
 namespace debugger {
+  
+static socket_def hsock_;
 
-/** Class registration in the Core */
-//REGISTER_CLASS(UdpService)
+    std::vector<IRawListener *> vecListeners_;
+    AttributeType timeout_;
+    AttributeType blockmode_;
+    AttributeType hostIP_;
+    AttributeType boardIP_;
+    
+    struct sockaddr_in sockaddr_ipv4_;
+    char               sockaddr_ipv4_str_[16];    // 3 dots  + 4 digits each 3 symbols + '\0' = 4*3 + 3 + 1;
+    unsigned short     sockaddr_ipv4_port_;
+    struct sockaddr_in remote_sockaddr_ipv4_;
+    char rcvbuf[4096];
 
-UdpService::UdpService()  {
-  /*
-    registerAttribute("Timeout", &timeout_);
-    registerAttribute("BlockingMode", &blockmode_);
-    registerAttribute("HostIP", &hostIP_);
-    registerAttribute("BoardIP", &boardIP_);
-  */
+void UdpService_UdpService()  {
     timeout_.make_int64(0);
     blockmode_.make_boolean(true);
     hostIP_.make_string("192.168.0.53");
     boardIP_.make_string("192.168.0.51");
 }
-
+  /*
 UdpService::~UdpService() {
     closeDatagramSocket();
 }
-
-void UdpService::postinitService() {
-    createDatagramSocket();
+  */
+void UdpService_postinitService() {
+    UdpService_createDatagramSocket();
 
     if (timeout_.to_int64()) {
         struct timeval tv;
@@ -49,16 +54,16 @@ void UdpService::postinitService() {
 
     /** By default socket was created with Blocking mode */
     if (!blockmode_.to_bool()) {
-        setBlockingMode(hsock_, false);
+        UdpService_setBlockingMode(hsock_, false);
     }
 }
 
-int UdpService::registerListener(IRawListener *ilistener) { 
+int UdpService_registerListener(IRawListener *ilistener) { 
     vecListeners_.push_back(ilistener);
     return 0;
 }
 
-int UdpService::createDatagramSocket() {
+int UdpService_createDatagramSocket() {
     char hostName[256];
     if(gethostname(hostName, sizeof(hostName)) < 0) {
         return -1;
@@ -94,7 +99,7 @@ int UdpService::createDatagramSocket() {
     return 0;
 }
 
-void UdpService::closeDatagramSocket() {
+void UdpService_closeDatagramSocket() {
     if (hsock_ < 0)
         return;
 
@@ -107,7 +112,7 @@ void UdpService::closeDatagramSocket() {
     hsock_ = -1;
 }
 
-bool UdpService::setBlockingMode(socket_def h, bool mode) {
+bool UdpService_setBlockingMode(socket_def h, bool mode) {
     int ret;
 #if defined(_WIN32) || defined(__CYGWIN__)
     u_long arg = mode ? 0 : 1;
@@ -128,7 +133,7 @@ bool UdpService::setBlockingMode(socket_def h, bool mode) {
     return false;
 }
 
-int UdpService::sendData(const uint8_t *msg, int len) {
+int UdpService_sendData(const uint8_t *msg, int len) {
     // define hardcoded remote address:
     remote_sockaddr_ipv4_ = sockaddr_ipv4_;
     remote_sockaddr_ipv4_.sin_addr.s_addr = inet_addr(boardIP_.to_string());  
@@ -163,7 +168,7 @@ int UdpService::sendData(const uint8_t *msg, int len) {
     return tx_bytes;
 }
 
-int UdpService::readData(const uint8_t *buf, int maxlen) {
+int UdpService_readData(const uint8_t *buf, int maxlen) {
     int sockerr;
     addr_size_t sockerr_len = sizeof(sockerr);
     addr_size_t addr_sz = sizeof(sockaddr_ipv4_);
