@@ -122,8 +122,6 @@ int shared_write(volatile struct etrans *addr, int cnt, struct etrans *ibuf)
     return edcl_write((uint64_t)addr, cnt*sizeof(struct etrans), (uint8_t*)ibuf);
   }
 
-//#define VERBOSE_FL
-
 int queue_flush(void)
 {
   int cnt;

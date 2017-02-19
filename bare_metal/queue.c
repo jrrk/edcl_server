@@ -1,15 +1,15 @@
+#include <stdio.h>
+#include <stdint.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
+#include "minion_lib.h"
+#include "../edcl.h"
 
-#ifdef NOTDEF
-
-static int sfd;
-
-#define VERBOSE
 int edcl_read(uint64_t addr, int bytes, uint8_t *obuf)
 {
   int status;
-  if (!sfd)
-    sfd = client_main("localhost", "1234");
-  status = client_read(addr, bytes, obuf);
+  status = EdclService_read(addr, bytes, obuf);
 #ifdef VERBOSE
   {
   char tmp[80];
@@ -17,7 +17,7 @@ int edcl_read(uint64_t addr, int bytes, uint8_t *obuf)
   sprintf(tmp, "edcl_read(0x%.8llX, %d, 0x%.8llX);", addr, bytes, *(uint64_t *)obuf);
   if (strcmp(tmp,old))
     {
-      printk("%s\n", tmp);
+      printf("%s\n", tmp);
       strcpy(old,tmp);
     }
   }
@@ -27,8 +27,6 @@ int edcl_read(uint64_t addr, int bytes, uint8_t *obuf)
 
 int edcl_write(uint64_t addr, int bytes, uint8_t *ibuf)
 {
-  if (!sfd)
-    sfd = client_main("localhost", "1234");
 #ifdef VERBOSE
   {
   char tmp[80];
@@ -36,12 +34,12 @@ int edcl_write(uint64_t addr, int bytes, uint8_t *ibuf)
   sprintf(tmp, "edcl_write(0x%.8llX, %d, 0x%.8llX);", addr, bytes, *(uint64_t *)ibuf);
   if (strcmp(tmp,old))
     { 
-      printk("%s\n", tmp);
+      printf("%s\n", tmp);
       strcpy(old,tmp);
     }
   }
 #endif
-  return client_write(addr, bytes, ibuf);
+  return EdclService_write(addr, bytes, ibuf);
 }
 
 enum edcl_mode {
@@ -77,8 +75,11 @@ void edcl_bootstrap(int entry)
 
 /* shared address space pointer (appears at 0x800000 in minion address map */
 volatile static struct etrans *shared_base;
-volatile uint32_t * const rxfifo_base = (volatile uint32_t*)(4<<20);
+
+/* minion address space pointers */
 volatile uint32_t * const led_base = (volatile uint32_t*)(7<<20);
+volatile uint32_t * const rxfifo_base = (volatile uint32_t*)(4<<20);
+volatile uint32_t * const txfifo_base = (volatile uint32_t*)(5<<20);
 
 int shared_read(volatile struct etrans *addr, int cnt, struct etrans *obuf)
   {
@@ -87,7 +88,7 @@ int shared_read(volatile struct etrans *addr, int cnt, struct etrans *obuf)
     int i;
     for (i = 0; i < cnt; i++)
       {
-	printk("shared_read(%d, %p) => %p,%x;\n", i, addr+i, obuf[i].ptr, obuf[i].val);
+	printf("shared_read(%d, %p) => %p,%x;\n", i, addr+i, obuf[i].ptr, obuf[i].val);
       }
 #endif
     return rslt;
@@ -101,10 +102,10 @@ int shared_write(volatile struct etrans *addr, int cnt, struct etrans *ibuf)
       {
 	{
 	  int j;
-	  printk("shared_write(%d, %p, 0x%x, 0x%p);\n", i, addr+i, cnt, ibuf);
+	  printf("shared_write(%d, %p, 0x%x, 0x%p);\n", i, addr+i, cnt, ibuf);
 	  for (j = 0; j < sizeof(struct etrans); j++)
-	    printk("%x ", ((volatile uint8_t *)(&addr[i]))[j]);
-	  printk("\n");
+	    printf("%x ", ((volatile uint8_t *)(&addr[i]))[j]);
+	  printf("\n");
 	}
       }
 #endif	
@@ -117,28 +118,28 @@ int queue_flush(void)
   struct etrans tmp;
   tmp.val = 0xDEADBEEF;
   edcl_trans[edcl_cnt++].mode = edcl_mode_unknown;
-#ifdef VERBOSE
+#ifdef VERBOSE_FL
   {
     int i;
-  printk("sizeof(struct etrans) = %ld\n", sizeof(struct etrans));
+  printf("sizeof(struct etrans) = %ld\n", sizeof(struct etrans));
   for (i = 0; i < edcl_cnt; i++)
     {
       switch(edcl_trans[i].mode)
 	{
 	case edcl_mode_write:
-	  printk("queue_mode_write(%p, 0x%x);\n", edcl_trans[i].ptr, edcl_trans[i].val);
+	  printf("queue_mode_write(%p, 0x%x);\n", edcl_trans[i].ptr, edcl_trans[i].val);
 	  break;
 	case edcl_mode_read:
-	  printk("queue_mode_read(%p, 0x%x);\n", edcl_trans[i].ptr, edcl_trans[i].val);
+	  printf("queue_mode_read(%p, 0x%x);\n", edcl_trans[i].ptr, edcl_trans[i].val);
 	  break;
 	case edcl_mode_unknown:
 	  if (i == edcl_cnt-1)
 	    {
-	    printk("queue_end();\n");
+	    printf("queue_end();\n");
 	    break;
 	    }
 	default:
-	  printk("queue_mode %d\n", edcl_trans[i].mode);
+	  printf("queue_mode %d\n", edcl_trans[i].mode);
 	  break;
 	}
     }
@@ -148,10 +149,10 @@ int queue_flush(void)
   shared_write(shared_base+edcl_max, 1, &tmp);
   do {
 #ifdef VERBOSE
-    int i = 10000000;
+    int i = 1000;
     int tot = 0;
     while (i--) tot += i;
-    printk("waiting for minion %x\n", tot);
+    printf("waiting for minion %x\n", tot);
 #endif
     shared_read(shared_base, 1, &tmp);
   } while (tmp.ptr);
@@ -167,7 +168,6 @@ int queue_flush(void)
 void queue_write(volatile uint32_t *const sd_ptr, uint32_t val, int flush)
  {
    struct etrans tmp;
-   spin_lock(&edcl_queue_lock);
 #if 0
    flush = 1;
 #endif   
@@ -180,16 +180,14 @@ void queue_write(volatile uint32_t *const sd_ptr, uint32_t val, int flush)
        queue_flush();
      }
 #ifdef VERBOSE  
-   printk("queue_write(%p, 0x%x);\n", tmp.ptr, tmp.val);
+   printf("queue_write(%p, 0x%x);\n", tmp.ptr, tmp.val);
 #endif
-   spin_unlock(&edcl_queue_lock);
  }
 
 uint32_t queue_read(volatile uint32_t * const sd_ptr)
  {
    int cnt;
    struct etrans tmp;
-   spin_lock(&edcl_queue_lock);
    tmp.mode = edcl_mode_read;
    tmp.ptr = sd_ptr;
    tmp.val = 0xDEADBEEF;
@@ -197,9 +195,8 @@ uint32_t queue_read(volatile uint32_t * const sd_ptr)
    cnt = queue_flush();
    shared_read(shared_base+(cnt-2), 1, &tmp);
 #ifdef VERBOSE
-   printk("queue_read(%p, %p, 0x%x);\n", sd_ptr, tmp.ptr, tmp.val);
+   printf("queue_read(%p, %p, 0x%x);\n", sd_ptr, tmp.ptr, tmp.val);
 #endif   
-   spin_unlock(&edcl_queue_lock);
    return tmp.val;
  }
 
@@ -239,25 +236,14 @@ int queue_block_read1(uint32_t tmpbuf[], int max)
     shared_read(shared_base, 1, &tmp);
   } while (tmp.ptr);
 #ifdef SDHCI_VERBOSE3
-   printk("queue_block_read1 completed\n");
+   printf("queue_block_read1 completed\n");
 #endif
    if (cnt > tmp.mode) cnt = tmp.mode;
    edcl_read((uint64_t)(shared_base+1), cnt*sizeof(uint32_t), (uint8_t*)tmpbuf);
    return cnt;
 }
 
-void rx_write_fifo(uint32_t data)
-{
-  queue_write(rxfifo_base, data, 0);
-}
-
-uint32_t rx_read_fifo(void)
-{
-  return queue_read(rxfifo_base);
-}
-
 void write_led(uint32_t data)
 {
   queue_write(led_base, data, 1);
 }
-#endif

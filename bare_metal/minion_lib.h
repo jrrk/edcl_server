@@ -84,7 +84,8 @@ void uart_printf(const char *fmt, ...);
 void log_printf(const char *fmt, ...);
 void uart_write(volatile unsigned int * const sd_ptr, unsigned val);
 int cli_readline_into_buffer(const char *const prompt, char *buffer, int timeout);
-int queue_block_read(unsigned iobuf[], unsigned iobuflen);
+int queue_block_read1(uint32_t tmpbuf[], int max);
+int queue_flush(void);
 
   // extern volatile unsigned int * const sd_base;
 

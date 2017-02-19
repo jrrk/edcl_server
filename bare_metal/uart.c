@@ -123,12 +123,12 @@ uint8_t uart_recv() {
 	  int ch;
 	  queue_write(keyb_base+1, 0, 0);
 	  ch = (queue_read(keyb_base+1) >> 8) & 127; /* strip off the scan code (default ascii code is UK) */
-	  if (ch == '\r') ch = '\n'; /* translate CR to LF, because nobody else will */
 	}
       else
 	ch = uart_tstchar();  
       usleep(10000);
     }
+  if (ch == '\r') ch = '\n'; /* translate CR to LF, because nobody else will */
   return ch;
 }
 
