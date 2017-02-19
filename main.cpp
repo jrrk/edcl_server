@@ -17,21 +17,6 @@
 #include <string>
 #include <assert.h>
 
-using namespace debugger;
-
-extern "C" int RISCV_printf(const char *fmt, ...) {
-    int ret = 0;
-    va_list arg;
-    char buf[4096];
-
-    va_start(arg, fmt);
-    ret = vsprintf(buf, fmt, arg);
-    buf[ret] = '\n';
-    write(1, buf, ret+1);
-    va_end(arg);
-    return ret;
-}
-
 static char tmp[256], old[256];
 
 int _edcl_read(uint64_t addr, int bytes, uint8_t *obuf)
@@ -62,6 +47,7 @@ int _edcl_write(uint64_t addr, int bytes, uint8_t *ibuf)
   return EdclService_write(addr,bytes,ibuf);
 }
 
+#ifdef LOGEDCL
 static int logf;
 
 void edcl_close(void)
@@ -133,6 +119,10 @@ int log_edcl_write(uint64_t addr, int bytes, uint8_t *ibuf)
   log_edcl("\n");
   return _edcl_write(addr, bytes, ibuf);
 }
+#else
+#define log_edcl_read _edcl_read
+#define log_edcl_write _edcl_write
+#endif
 
 enum edcl_mode {
   edcl_mode_unknown,

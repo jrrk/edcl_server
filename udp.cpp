@@ -8,8 +8,6 @@
 #include "api_utils.h"
 #include "udp.h"
 
-namespace debugger {
-  
 static socket_def hsock_;
 
   //    std::vector<IRawListener *> vecListeners_;
@@ -202,5 +200,3 @@ int UdpService_readData(const uint8_t *buf, int maxlen) {
     }
     return res;
 }
-
-}  // namespace debugger

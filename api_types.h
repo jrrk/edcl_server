@@ -34,8 +34,6 @@
 #include <termios.h>  // work with console
 #endif
 
-namespace debugger {
-
 #if defined(_WIN32) || defined(__CYGWIN__)
     typedef SOCKET socket_def;
     typedef int addr_size_t;
@@ -76,7 +74,5 @@ typedef struct LibThreadType
     void *args;
     thread_def Handle;
 } LibThreadType;
-
-}  // namespace debugger
 
 #endif  // __DEBUGGER_API_TYPES_H__

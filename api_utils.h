@@ -11,8 +11,6 @@
 #include <stdarg.h>
 #include "api_types.h"
 
-namespace debugger {
-
 #define LOG_ERROR 1
 #define LOG_INFO  3
 #define LOG_DEBUG 4
@@ -79,7 +77,5 @@ void RISCV_write_json_file(const char *filename, const char *s);
 #ifdef __cplusplus
 }
 #endif
-
-}  // namespace debugger
 
 #endif  // __DEBUGGER_API_UTILS_H__

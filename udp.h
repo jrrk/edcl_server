@@ -11,9 +11,6 @@
 #include "api_types.h"
 #include "attribute.h"
 #include "irawlistener.h"
-//#include <vector>
-
-namespace debugger {
 
     void UdpService_UdpService();
 
@@ -42,7 +39,5 @@ namespace debugger {
 
     int UdpService_createDatagramSocket();
     void UdpService_closeDatagramSocket();
-
-}  // namespace debugger
 
 #endif  // __DEBUGGER_UDP_SERVICE_H__

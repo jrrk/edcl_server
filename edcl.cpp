@@ -9,13 +9,25 @@
 #include "api_utils.h"
 #include "edcl.h"
 
-namespace debugger {
-
     uint8_t tx_buf_[4096];
     uint8_t rx_buf_[4096];
   uint64_t seq_cnt_;
 
   static int first;
+  static char buf[4096];
+
+
+extern "C" int RISCV_printf(const char *fmt, ...) {
+    int ret = 0;
+    va_list arg;
+
+    va_start(arg, fmt);
+    ret = vsprintf(buf, fmt, arg);
+    buf[ret] = '\n';
+    write(1, buf, ret+1);
+    va_end(arg);
+    return ret;
+}
 
 void EdclService_EdclService()  {
     seq_cnt_ = (0);
@@ -180,5 +192,3 @@ int EdclService_write32(uint8_t *buf, int off, uint32_t v) {
 uint32_t EdclService_read32(uint8_t *buf) {
     return (buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | (buf[3] << 0);
 }
-
-}  // namespace debugger

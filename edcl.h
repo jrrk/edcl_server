@@ -13,14 +13,8 @@
 #include "udp.h"
 #include <inttypes.h>
 
-namespace debugger {
+extern "C" {
 
-  /*
-struct EdclService  {
-public:
-    EdclService();
-  */
-    /** ITap interface */
      int EdclService_read(uint64_t addr, int bytes, uint8_t *obuf);
      int EdclService_write(uint64_t addr, int bytes, uint8_t *ibuf);
 
@@ -36,6 +30,6 @@ public:
 
     //};
 
-}  // namespace debugger
+}
 
 #endif  // __DEBUGGER_EDCL_H__

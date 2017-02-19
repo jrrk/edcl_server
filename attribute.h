@@ -12,8 +12,6 @@
 #include <string.h>
 //#include "iattr.h"
 
-namespace debugger {
-
 enum KindType {
         Attr_Invalid,
         Attr_String,
@@ -327,7 +325,5 @@ class AttributePairType {
     AttributeType key_;
     AttributeType value_;
 };
-
-}  // namespace debugger
 
 #endif  // __DEBUGGER_ATTRIBUTE_H__

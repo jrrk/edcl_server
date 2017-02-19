@@ -10,8 +10,6 @@
 
  #include <inttypes.h>
 
- namespace debugger {
-
 struct EdclControlRequestType {
     // 32 bits fields:
     uint32_t unused : 7;
@@ -43,7 +41,5 @@ struct UdpEdclCommonType {
     //uint32 data; // 0 to 242 words
 };
 #pragma pack()
-
-}  // namespace debugger
 
 #endif  // __DEBUGGER_EDCL_TYPES_H__
